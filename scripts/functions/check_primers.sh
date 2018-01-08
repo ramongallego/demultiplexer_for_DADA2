@@ -14,4 +14,3 @@ cat "${primers_file}"
 else
   echo "primers look good"
 fi
-exit
