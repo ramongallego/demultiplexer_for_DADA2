@@ -46,13 +46,19 @@ if [[ -s "${NEWLINES_FIXED}" ]]; then
 	SEQUENCING_METADATA="${NEWLINES_FIXED}"
 fi
 
+#Create output directory
+START_TIME=$(date +%Y%m%d_%H%M)
+DEMULT_DIR="${OUTPUT_DIRECTORY}"/demultiplexed_"${START_TIME}"
 
-#Create a folder for all demultiplexed fastqs
-DEMULT_DIR="${PARENT_DIR}"/demultiplexed
+if [[ -d "${OUTPUT_DIRECTORY}" ]]; then
   mkdir "${DEMULT_DIR}"
-
-
-
+  echo "Output files would be in ${DEMULT_DIR}"
+else
+  mkdir "${OUTPUT_DIRECTORY}"
+  mkdir "${DEMULT_DIR}"
+  echo "Output files would be in ${DEMULT_DIR}"
+fi
+mkdir "${DEMULT_DIR}"/cleaned
 ################################################################################
 # READ METADATA
 ################################################################################
@@ -193,7 +199,7 @@ ID2_ALL_RC=($( for i in "${ID2_ALL[@]}"; do revcom $i; done))
 # write file for translating demultiplexed output to samples
 SAMPLE_TRANS_FILE="${DEMULT_DIR}"/sample_trans.tmp
 for (( i=0; i < "${#ID2_ALL[@]}"; i++ )); do
-  printf "ID1=%s;ID2A=%s;ID2B=%s\tID1=%s;ID2=%s\tsample=%s\n" \
+  printf "ID1=%s;ID2A=%s;ID2B=%s\t%s_%s\tsample=%s\n" \
 	"${ID1_ALL[i]}" "${ID2_ALL[i]}" "${ID2_ALL_RC[i]}" \
 	"${ID1_ALL[i]}" "${ID2_ALL[i]}" \
 	"${SAMPLE_NAMES[i]}" >> "${SAMPLE_TRANS_FILE}"
@@ -213,6 +219,11 @@ for (( i=0; i < "${#ID2S[@]}"; i++ )); do
   printf ">%s\n^NNN%s\n" \
 	"${ID2S[i]}" "${ID2S[i]}" >> "${FASTA_file}"
 done
+primers_file="${DEMULT_DIR}"/pcr_primers.fasta
+
+printf ">FWD\n${PRIMER1}\n>REV\n${PRIMER2}\n" > "${primers_file}"
+
+source "${SCRIPT_DIR}"/functions/check_primers.sh "${primers_file}"
 
 #Hooray it works
 #Create a dir for all the demultiplexed files
@@ -256,30 +267,55 @@ for (( i=0; i < "${#FILE1[@]}"; i++ )); do
 cutadapt -g file:"${FASTA_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.1.fastq -p "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.2.fastq \
  "${READ1}" "${READ2}" --quiet --discard-untrimmed
 
-#The outputs should be /Lib_A_{tag}_round1.1 or .2
-#Create a summary file
+#This split each pair of fastqs into as many pairs of fastqs as barcodes are
+#but only looking at them on the .1 file -> do the same on the other file, and keep
+#the order of reads similar in both files
 
-
-
- ##Ok, now, try to get them to do the same on the other end
- j=0
  for file in "${DEMULT_DIR}"/"${ID1S[i]}"/*round1.2.fastq; do
-  j=j+1
-  echo "Round ${j}"
+  # List all files being used:
+  # file: .2.fastq; r1file, mid1,mid2, nof1, nof2, nor1,nor2
+  r1file=$(echo ${file} | sed 's/.2.fastq/.1.fastq/g' ) # .1.fastq
+  MID_OUTPUT1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_mid.1.fastq #double trimmed
+  MID_OUTPUT2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_mid.2.fastq #double trimmed
+	NEW_OUTPUT_Fwd_1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Fwd.1.fastq
+	NEW_OUTPUT_Fwd_2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Fwd.2.fastq
+	NEW_OUTPUT_Rev_1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Rev.1.fastq
+	NEW_OUTPUT_Rev_2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Rev.2.fastq
 
 
-  #First, extract the right barcode from the filename
-  path_to_delete="$(dirname "${file}" | sed 's_/_\\/_g')" # this turns
+
+
+  #NOw, shorter file names for output
+  source "${SCRIPT_DIR}"/functions/strip_path.sh "${file}" file
+  source "${SCRIPT_DIR}"/functions/strip_path.sh "${r1file}" r1file
+  source "${SCRIPT_DIR}"/functions/strip_path.sh "${MID_OUTPUT1}" MID_OUTPUT1
+  source "${SCRIPT_DIR}"/functions/strip_path.sh "${MID_OUTPUT2}" MID_OUTPUT2
+	source "${SCRIPT_DIR}"/functions/strip_path.sh "${NEW_OUTPUT_Fwd_1}" NEW_OUTPUT_Fwd_1
+	source "${SCRIPT_DIR}"/functions/strip_path.sh "${NEW_OUTPUT_Fwd_2}" NEW_OUTPUT_Fwd_2
+	source "${SCRIPT_DIR}"/functions/strip_path.sh "${NEW_OUTPUT_Rev_1}" NEW_OUTPUT_Rev_1
+	source "${SCRIPT_DIR}"/functions/strip_path.sh "${NEW_OUTPUT_Rev_2}" NEW_OUTPUT_Rev_2
+
+  #path_to_delete="$(dirname "${file}" | sed 's_/_\\/_g')" # this turns
   # the path into \/ so it can be trimmed out
   #echo "${path_to_delete}"
 
-  echo ${file} | sed "s/${path_to_delete}//g"
+  #short_file=$(echo ${file} | sed "s/${path_to_delete}//g")
+  #short_r1_file=$()
+  #short_NO1
+  #short_NO2
+
+
+
+  echo "${short_MID_OUTPUT2}"
+
+
+  echo "${short_file}"
   nseq_file=$(cat "${file}" | wc -l)
   echo "${nseq_file} reads before retrimming"
 
-  r1file=$(echo ${file} | sed 's/.2.fastq/.1.fastq/g' )
+
   echo "the other half reads are (.1.)"
-  echo "${r1file}" | sed "s/${path_to_delete}//g"
+  echo "${short_r1file}"
   nseq_r1file=$(cat "${r1file}" |  wc -l)
   echo "with ${nseq_r1file} reads"
 
@@ -291,29 +327,86 @@ cutadapt -g file:"${FASTA_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}
   echo "this is the right barcode"
   echo ${RIGHT_BARCODE}
 
-  NEW_OUTPUT1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}".1.fastq
-  NEW_OUTPUT2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}".2.fastq
 
-  cutadapt -g ^NNN"${RIGHT_BARCODE}" -o "${NEW_OUTPUT2}" \
-  -p "${NEW_OUTPUT1}" "${file}" "${r1file}" --quiet --discard-untrimmed
+  cutadapt -g ^NNN"${RIGHT_BARCODE}" -o "${MID_OUTPUT2}" \
+  -p "${MID_OUTPUT1}" "${file}" "${r1file}" --quiet --discard-untrimmed
 
-  nseq_s2r1file=$(cat "${NEW_OUTPUT1}" |  wc -l)
-  nseq_s2r2file=$(cat "${NEW_OUTPUT2}" |  wc -l)
-  echo "This is the new R1 file ${NEW_OUTPUT1}"
+
+  nseq_s2r1file=$(cat "${MID_OUTPUT1}" |  wc -l)
+  nseq_s2r2file=$(cat "${MID_OUTPUT2}" |  wc -l)
+  echo "This is the mid R1 file"
+  echo "${short_MID_OUTPUT1}"
   echo "and it has ${nseq_s2r1file} reads after trimming"
-  echo "Hopefully the same number of lines as the R2 ${nseq_s2r2file}"
+  echo "Hopefully the same number of lines as the mid R2 ${nseq_s2r2file}"
 
-  #get rid of the previous read -
-#  rm "${file}"
-#  rm "${r1file}"
-  printf "%s,%s,%s,%s,%s,%s,%s,%s\n" \
-  "${r1file}" "${nseq_r1file}" \
-  "${file}" "${nseq_file}" \
-  "${NEW_OUTPUT1}" "${nseq_s2r1file}" \
-  "${NEW_OUTPUT2}" "${nseq_s2r2file}" >> "${OUTPUT_SUMMARY}"
+# Now remove the pcr primers
+# This is an important point for libraries prepared by ligation:
+# The i7 adapters can ligate on either Fwd or Rev primer end- so you have
+# roughly half the sequence in one direction and half on the other direction
+# What to do with them is up to you: we'll generate 4 fastqs per sample
+#FWD.1
+#FWD.2
+#REV.1
+#REV.2
+#You can either choose one pair and discard 50% of your data,
+#Add #rev to the header of those affected and leave them as they are
+#Add #rev and RC those affected
+# do the analysis twice
+#
+#First remove the primers from .1 and select those from the file and then we'll see
+#will later assume that if the barcodes were fine, then the primer will be fine too
+
+cutadapt -g file:"${primers_file}" --discard-untrimmed\
+ -o "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.1.fastq \
+ -p "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
+ "${MID_OUTPUT1}" "${MID_OUTPUT2}"
+
+#Now remove the rev primer at the beggining of the .2 for those READS
+#in which we found the FWD primer at the beggining of .1
+cutadapt -g "${PRIMER2}" --discard-untrimmed \
+-o "${NEW_OUTPUT_Fwd_2}" \
+-p "${NEW_OUTPUT_Fwd_1}" \
+"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
+"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq
+
+#Now do similarly for those in which we found rev at the beggining of .1
+
+cutadapt -g "${PRIMER1}" --discard-untrimmed \
+-o "${NEW_OUTPUT_Rev_2}" \
+-p "${NEW_OUTPUT_Rev_1}" \
+"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
+"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq
+
+
+nseq_NOF1=$(cat ${NEW_OUTPUT_Fwd_1} | wc -l)
+nseq_NOR1=$(cat ${NEW_OUTPUT_Rev_1} | wc -l)
+
+
+#print the summary information
+  printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
+  "${short_r1file}" "${nseq_r1file}" \
+  "${short_file}" "${nseq_file}" \
+  "${short_MID_OUTPUT1}" "${nseq_s2r1file}" \
+  "${short_MID_OUTPUT2}" "${nseq_s2r2file}" \
+	"${short_NEW_OUTPUT_Fwd_1}" "${nseq_NOF1}" \
+  "${short_NEW_OUTPUT_Rev_1}" "${nseq_NOR1}" >> "${OUTPUT_SUMMARY}"
   # now clean the middle FILES
   rm "${file}"
   rm "${r1file}"
+	rm "${MID_OUTPUT1}"
+	rm "${MID_OUTPUT2}"
+	rm "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq
+	rm "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq
+	rm "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq
+	rm "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq
+
+
+
   done
+  rm -r "${DEMULT_DIR}"/"${ID1S[i]}"
+
+
+
+
 
 done
