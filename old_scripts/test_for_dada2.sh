@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR="/Users/rgallego/demultiplexer_for_dada2/scripts"
+
+DEMULT_DIR="~/fastqs_demultiplexed_for_DADA2/demultiplexed_20180108_1539"
+
+SAMPLE_TRANS_FILE="~/fastqs_demultiplexed_for_DADA2/demultiplexed_20180108_1539/sample_trans.map"
+
+Rscript "${SCRIPT_DIR}"/r/dada2.r "${DEMULT_DIR}" "${SAMPLE_TRANS_FILE}"
+
+#R -e "rmarkdown::render("dada2.Rmd", params=list(folder="${DEMULT_DIR}"))"

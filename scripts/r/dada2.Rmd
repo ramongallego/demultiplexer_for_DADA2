@@ -1,0 +1,37 @@
+---
+title: "Dada2_report"
+author: "Ramón Gallego"
+date: "1/9/2018"
+output: html_document
+params:
+  folder: 
+    value: x
+    
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir=params$folder)
+```
+
+## Dada2 report
+
+You have successfully split your libraries into a pair (or two) of fastq files per sample. Now let's import the output of demultiplex_both_fastq.sh  
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+list.files(path = params$folder)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
