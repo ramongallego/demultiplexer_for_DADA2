@@ -214,11 +214,12 @@ done
 
 #Create the fasta file of the barcodes
 
-FASTA_file="$DEMULT_DIR"/barcodes.fasta
+Barcodes_file="$DEMULT_DIR"/barcodes.fasta
 for (( i=0; i < "${#ID2S[@]}"; i++ )); do
   printf ">%s\n^NNN%s\n" \
-	"${ID2S[i]}" "${ID2S[i]}" >> "${FASTA_file}"
+	"${ID2S[i]}" "${ID2S[i]}" >> "${Barcodes_file}"
 done
+
 primers_file="${DEMULT_DIR}"/pcr_primers.fasta
 
 printf ">FWD\n${PRIMER1}\n>REV\n${PRIMER2}\n" > "${primers_file}"
@@ -233,7 +234,7 @@ source "${SCRIPT_DIR}"/functions/check_primers.sh "${primers_file}"
 # to get the .1 files trimmed and the .2 selected along
 
 OUTPUT_SUMMARY="${DEMULT_DIR}/summary.csv"
-printf "First_trim_R1,nReads_R1,First_trim_R2,nReads_R2,Second_trim_R1,nReads_StR1,Second_trim_R2,nReads_StR2\n" \
+printf "First_trim_R1,nReads_R1,First_trim_R2,nReads_R2,Second_trim_R1,nReads_StR1,Second_trim_R2,nReads_StR2,NEW_OUTPUT_Fwd_1,nreadsFwd,NEW_OUTPUT_Rev_1,nreadsRev\n" \
 > "${OUTPUT_SUMMARY}"
 
 ################################################################################
@@ -250,7 +251,7 @@ for (( i=0; i < "${#FILE1[@]}"; i++ )); do
   BASE2="${FILE2[i]%.*}"
 
   mkdir "${DEMULT_DIR}"/"${ID1S[i]}"
-
+	mkdir "${DEMULT_DIR}"/cleaned/"${ID1S[i]}"
 
 
 
@@ -264,8 +265,9 @@ for (( i=0; i < "${#FILE1[@]}"; i++ )); do
 #version from banzai, comment it out from now on
 
 
-cutadapt -g file:"${FASTA_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.1.fastq -p "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.2.fastq \
+cutadapt -g file:"${Barcodes_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.1.fastq -p "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.2.fastq \
  "${READ1}" "${READ2}" --quiet --discard-untrimmed
+
 
 #This split each pair of fastqs into as many pairs of fastqs as barcodes are
 #but only looking at them on the .1 file -> do the same on the other file, and keep
@@ -274,14 +276,27 @@ cutadapt -g file:"${FASTA_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}
  for file in "${DEMULT_DIR}"/"${ID1S[i]}"/*round1.2.fastq; do
   # List all files being used:
   # file: .2.fastq; r1file, mid1,mid2, nof1, nof2, nor1,nor2
-  r1file=$(echo ${file} | sed 's/.2.fastq/.1.fastq/g' ) # .1.fastq
-  MID_OUTPUT1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_mid.1.fastq #double trimmed
-  MID_OUTPUT2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_mid.2.fastq #double trimmed
-	NEW_OUTPUT_Fwd_1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Fwd.1.fastq
-	NEW_OUTPUT_Fwd_2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Fwd.2.fastq
-	NEW_OUTPUT_Rev_1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Rev.1.fastq
-	NEW_OUTPUT_Rev_2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Rev.2.fastq
 
+	RIGHT_BARCODE=$(echo ${file} | awk '/_round1/ {
+    match($0, /_round1/); print substr($0, RSTART - 6, 6);
+    }')
+
+		short_file=$(basename "${file}")
+
+	r1file=$(echo ${file} | sed 's/.2.fastq/.1.fastq/g' )
+	 	short_r1file=$(basename "${r1file}") # .1.fastq
+  MID_OUTPUT1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_mid.1.fastq
+		short_MID_OUTPUT1=$(basename "${MID_OUTPUT1}") #double trimmed
+  MID_OUTPUT2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_mid.2.fastq #double trimmed
+		short_MID_OUTPUT2=$(basename "${MID_OUTPUT2}")
+	NEW_OUTPUT_Fwd_1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Fwd.1.fastq
+		short_NEW_OUTPUT_Fwd_1=$(basename "${NEW_OUTPUT_Fwd_1}")
+	NEW_OUTPUT_Fwd_2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Fwd.2.fastq
+		short_NEW_OUTPUT_Fwd_2=$(basename "${NEW_OUTPUT_Fwd_2}")
+	NEW_OUTPUT_Rev_1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Rev.1.fastq
+		short_NEW_OUTPUT_Rev_1=$(basename "${NEW_OUTPUT_Rev_1}")
+	NEW_OUTPUT_Rev_2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Rev.2.fastq
+		short_NEW_OUTPUT_Rev_2=$(basename "${NEW_OUTPUT_Rev_2}")
 
 
 
@@ -319,9 +334,6 @@ cutadapt -g file:"${FASTA_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}
   nseq_r1file=$(cat "${r1file}" |  wc -l)
   echo "with ${nseq_r1file} reads"
 
-  RIGHT_BARCODE=$(echo ${file} | awk '/_round1/ {
-    match($0, /_round1/); print substr($0, RSTART - 6, 6);
-    }')
 
   #Now use that as an argunment for cutadapt
   echo "this is the right barcode"
@@ -330,7 +342,6 @@ cutadapt -g file:"${FASTA_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}
 
   cutadapt -g ^NNN"${RIGHT_BARCODE}" -o "${MID_OUTPUT2}" \
   -p "${MID_OUTPUT1}" "${file}" "${r1file}" --quiet --discard-untrimmed
-
 
   nseq_s2r1file=$(cat "${MID_OUTPUT1}" |  wc -l)
   nseq_s2r2file=$(cat "${MID_OUTPUT2}" |  wc -l)
@@ -356,10 +367,14 @@ cutadapt -g file:"${FASTA_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}
 #First remove the primers from .1 and select those from the file and then we'll see
 #will later assume that if the barcodes were fine, then the primer will be fine too
 
+
 cutadapt -g file:"${primers_file}" --discard-untrimmed\
  -o "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.1.fastq \
  -p "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
- "${MID_OUTPUT1}" "${MID_OUTPUT2}"
+ "${MID_OUTPUT1}" "${MID_OUTPUT2}" --quiet
+
+
+
 
 #Now remove the rev primer at the beggining of the .2 for those READS
 #in which we found the FWD primer at the beggining of .1
@@ -367,7 +382,7 @@ cutadapt -g "${PRIMER2}" --discard-untrimmed \
 -o "${NEW_OUTPUT_Fwd_2}" \
 -p "${NEW_OUTPUT_Fwd_1}" \
 "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
-"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq
+"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq --quiet
 
 #Now do similarly for those in which we found rev at the beggining of .1
 
@@ -375,7 +390,7 @@ cutadapt -g "${PRIMER1}" --discard-untrimmed \
 -o "${NEW_OUTPUT_Rev_2}" \
 -p "${NEW_OUTPUT_Rev_1}" \
 "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
-"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq
+"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq --quiet
 
 
 nseq_NOF1=$(cat ${NEW_OUTPUT_Fwd_1} | wc -l)
@@ -410,3 +425,4 @@ nseq_NOR1=$(cat ${NEW_OUTPUT_Rev_1} | wc -l)
 
 
 done
+rm -rf "${DEMULT_DIR}"/cleaned
