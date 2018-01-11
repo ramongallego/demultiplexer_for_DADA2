@@ -119,7 +119,7 @@ else
   echo 'ERROR:' 'At least one file is not valid'
   echo 'Looked in metadata columns' "${COLNUM_FILE1}" 'and' "${COLNUM_FILE2}"
   echo 'Aborting script'
-  exit 1
+  exit
 fi
 #here we play again
 if [[ "${SECONDARY_INDEX}" == "YES" ]]; then
@@ -251,6 +251,8 @@ for (( i=0; i < "${#FILE1[@]}"; i++ )); do
 
   mkdir "${DEMULT_DIR}"/"${ID1S[i]}"
 
+	mkdir "${DEMULT_DIR}"/cleaned/"${ID1S[i]}"
+
 
 
 
@@ -272,7 +274,15 @@ cutadapt -g file:"${FASTA_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}
 #the order of reads similar in both files
 
  for file in "${DEMULT_DIR}"/"${ID1S[i]}"/*round1.2.fastq; do
-  # List all files being used:
+
+
+	RIGHT_BARCODE=$(echo ${file} | awk '/_round1/ {
+	     match($0, /_round1/); print substr($0, RSTART - 6, 6);
+	     }')
+
+
+
+	# List all files being used:
   # file: .2.fastq; r1file, mid1,mid2, nof1, nof2, nor1,nor2
   r1file=$(echo ${file} | sed 's/.2.fastq/.1.fastq/g' ) # .1.fastq
   MID_OUTPUT1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_mid.1.fastq #double trimmed
@@ -318,10 +328,6 @@ cutadapt -g file:"${FASTA_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}
   echo "${short_r1file}"
   nseq_r1file=$(cat "${r1file}" |  wc -l)
   echo "with ${nseq_r1file} reads"
-
-  RIGHT_BARCODE=$(echo ${file} | awk '/_round1/ {
-    match($0, /_round1/); print substr($0, RSTART - 6, 6);
-    }')
 
   #Now use that as an argunment for cutadapt
   echo "this is the right barcode"
