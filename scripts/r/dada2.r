@@ -16,8 +16,12 @@ arguments <- commandArgs(TRUE)
 
 fastq.folder<-arguments[1]
 
+scripts.folder <-arguments[2]
+
 #list.files()
-render("dada2.Rmd", params = list(
+setwd (scripts.folder)
+getwd ()
+render("r/dada2.Rmd", params = list(
 
   folder=fastq.folder))
 
