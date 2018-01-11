@@ -150,10 +150,7 @@ dim(seqtab.nochim)
 
 library(vegan)
 dis_bc<-vegdist(seqtab.nochim, method = "bray",binary = F, diag=T,upper=T)
-rename_samples <- function(map_otu, map_sample){
-  map_otu[,1] <- map_sample[,3][match(map_otu[,1], map_sample[,2])]
-  return(map_otu)
-}
+
 
 
 ```
@@ -165,8 +162,10 @@ seqtab.nochim.df=as.data.frame(seqtab.nochim)
 seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
 
 seqs_tidy<-gather(seqtab.nochim.df, key=Sequence, value = nReads, -sample)
-inner_join(seqs_tidy,sample.map[,2:3],by = c("sample" = "fastq_header"))
-rename_samples(seqtab.nochim.df,sample.map)
+inner_join(sample.map[,2:3],seqs_tidy,by = c("fastq_header" = "sample")) %>% 
+  select(-fastq_header) %>%
+  write_csv(paste0(path1,"/DUP_table.csv"))
+
 ```
 TODO: I don't like the format of the output: we should 
 
@@ -174,10 +173,12 @@ TODO: I don't like the format of the output: we should
 ```{r}
 
 getN <- function(x) sum(getUniques(x))
-track <- cbind(out, sapply(dadaFs, getN), sapply(mergersF, getN), rowSums(seqtab), rowSums(seqtab.nochim))
+track <- as.data.frame(cbind(out, sapply(dadaFs, getN), sapply(mergersF, getN), rowSums(seqtab), rowSums(seqtab.nochim)))
 # If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
 colnames(track) <- c("input", "filtered", "denoised", "merged", "tabled", "nonchim")
-rownames(track) <- good.sample.names
-head(track)
+track$sample <- good.sample.names
+inner_join(sample.map[,2:3],track, by = c("fastq_header"="sample")) %>%
+  select(-fastq_header) %>%
+  write_csv(paste0(path1,"/dada2_summary.csv"))
 
 ```

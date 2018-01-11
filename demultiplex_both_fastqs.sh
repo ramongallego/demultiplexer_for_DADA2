@@ -412,5 +412,5 @@ nseq_NOR1=$(cat ${NEW_OUTPUT_Rev_1} | wc -l)
 done
 
 if "${SEARCH_ASVs}"=="YES"; then
-	Rscript "${SCRIPT_DIR}"/r/dada2.r "${DEMULT_DIR}" "${SAMPLE_TRANS_FILE}"
+	Rscript "${SCRIPT_DIR}"/r/dada2.r "${DEMULT_DIR}" "${SCRIPT_DIR}"
 fi
