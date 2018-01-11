@@ -199,7 +199,7 @@ ID2_ALL_RC=($( for i in "${ID2_ALL[@]}"; do revcom $i; done))
 # write file for translating demultiplexed output to samples
 SAMPLE_TRANS_FILE="${DEMULT_DIR}"/sample_trans.tmp
 for (( i=0; i < "${#ID2_ALL[@]}"; i++ )); do
-  printf "ID1=%s;ID2A=%s;ID2B=%s\t%s_%s\tsample=%s\n" \
+  printf "ID1=%s;ID2A=%s;ID2B=%s\t%s_%s\t%s\n" \
 	"${ID1_ALL[i]}" "${ID2_ALL[i]}" "${ID2_ALL_RC[i]}" \
 	"${ID1_ALL[i]}" "${ID2_ALL[i]}" \
 	"${SAMPLE_NAMES[i]}" >> "${SAMPLE_TRANS_FILE}"
