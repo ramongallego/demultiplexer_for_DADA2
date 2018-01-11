@@ -257,21 +257,21 @@ for (( i=0; i < "${#FILE1[@]}"; i++ )); do
 
 
 
-#DEMULT_DIR="/Users/Moncho/trial_barcode_splitter/demult"
-#FASTA_file="/Users/Moncho/banzai_out_20171228_1748/barcodes.fasta"
-#READ1="/Users/Moncho/Google_Drive/Run_Nov17/OA_COI/171122_sub/Lib-A_S1_L001_R1_001_sub.fastq"
-#READ2="/Users/Moncho/Google_Drive/Run_Nov17/OA_COI/171122_sub/Lib-A_S1_L001_R2_001_sub.fastq"
+	#DEMULT_DIR="/Users/Moncho/trial_barcode_splitter/demult"
+	#FASTA_file="/Users/Moncho/banzai_out_20171228_1748/barcodes.fasta"
+	#READ1="/Users/Moncho/Google_Drive/Run_Nov17/OA_COI/171122_sub/Lib-A_S1_L001_R1_001_sub.fastq"
+	#READ2="/Users/Moncho/Google_Drive/Run_Nov17/OA_COI/171122_sub/Lib-A_S1_L001_R2_001_sub.fastq"
 
 
-#version from banzai, comment it out from now on
+	#version from banzai, comment it out from now on
 
 
-cutadapt -g file:"${FASTA_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.1.fastq -p "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.2.fastq \
- "${READ1}" "${READ2}" --quiet --discard-untrimmed
+	cutadapt -g file:"${FASTA_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.1.fastq -p "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.2.fastq \
+ 	"${READ1}" "${READ2}" --quiet --discard-untrimmed
 
-#This split each pair of fastqs into as many pairs of fastqs as barcodes are
-#but only looking at them on the .1 file -> do the same on the other file, and keep
-#the order of reads similar in both files
+	#This split each pair of fastqs into as many pairs of fastqs as barcodes are
+	#but only looking at them on the .1 file -> do the same on the other file, and keep
+	#the order of reads similar in both files
 
  for file in "${DEMULT_DIR}"/"${ID1S[i]}"/*round1.2.fastq; do
 
@@ -345,50 +345,50 @@ cutadapt -g file:"${FASTA_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}
   echo "and it has ${nseq_s2r1file} reads after trimming"
   echo "Hopefully the same number of lines as the mid R2 ${nseq_s2r2file}"
 
-# Now remove the pcr primers
-# This is an important point for libraries prepared by ligation:
-# The i7 adapters can ligate on either Fwd or Rev primer end- so you have
-# roughly half the sequence in one direction and half on the other direction
-# What to do with them is up to you: we'll generate 4 fastqs per sample
-#FWD.1
-#FWD.2
-#REV.1
-#REV.2
-#You can either choose one pair and discard 50% of your data,
-#Add #rev to the header of those affected and leave them as they are
-#Add #rev and RC those affected
-# do the analysis twice
-#
-#First remove the primers from .1 and select those from the file and then we'll see
-#will later assume that if the barcodes were fine, then the primer will be fine too
+	# Now remove the pcr primers
+	# This is an important point for libraries prepared by ligation:
+	# The i7 adapters can ligate on either Fwd or Rev primer end- so you have
+	# roughly half the sequence in one direction and half on the other direction
+	# What to do with them is up to you: we'll generate 4 fastqs per sample
+	#FWD.1
+	#FWD.2
+	#REV.1
+	#REV.2
+	#You can either choose one pair and discard 50% of your data,
+	#Add #rev to the header of those affected and leave them as they are
+	#Add #rev and RC those affected
+	# do the analysis twice
+	#
+	#First remove the primers from .1 and select those from the file and then we'll see
+	#will later assume that if the barcodes were fine, then the primer will be fine too
 
-cutadapt -g file:"${primers_file}" --discard-untrimmed\
- -o "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.1.fastq \
- -p "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
- "${MID_OUTPUT1}" "${MID_OUTPUT2}"
+	cutadapt -g file:"${primers_file}" --discard-untrimmed\
+ 	-o "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.1.fastq \
+ 	-p "${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
+ 	"${MID_OUTPUT1}" "${MID_OUTPUT2}"
 
-#Now remove the rev primer at the beggining of the .2 for those READS
-#in which we found the FWD primer at the beggining of .1
-cutadapt -g "${PRIMER2}" --discard-untrimmed \
--o "${NEW_OUTPUT_Fwd_2}" \
--p "${NEW_OUTPUT_Fwd_1}" \
-"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
-"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq
+	#Now remove the rev primer at the beggining of the .2 for those READS
+	#in which we found the FWD primer at the beggining of .1
+	cutadapt -g "${PRIMER2}" --discard-untrimmed \
+	-o "${NEW_OUTPUT_Fwd_2}" \
+	-p "${NEW_OUTPUT_Fwd_1}" \
+	"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
+	"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq
 
-#Now do similarly for those in which we found rev at the beggining of .1
+	#Now do similarly for those in which we found rev at the beggining of .1
 
-cutadapt -g "${PRIMER1}" --discard-untrimmed \
--o "${NEW_OUTPUT_Rev_2}" \
--p "${NEW_OUTPUT_Rev_1}" \
-"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
-"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq
-
-
-nseq_NOF1=$(cat ${NEW_OUTPUT_Fwd_1} | wc -l)
-nseq_NOR1=$(cat ${NEW_OUTPUT_Rev_1} | wc -l)
+	cutadapt -g "${PRIMER1}" --discard-untrimmed \
+	-o "${NEW_OUTPUT_Rev_2}" \
+	-p "${NEW_OUTPUT_Rev_1}" \
+	"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
+	"${DEMULT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq
 
 
-#print the summary information
+		nseq_NOF1=$(cat ${NEW_OUTPUT_Fwd_1} | wc -l)
+		nseq_NOR1=$(cat ${NEW_OUTPUT_Rev_1} | wc -l)
+
+
+		#print the summary information
   printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
   "${short_r1file}" "${nseq_r1file}" \
   "${short_file}" "${nseq_file}" \
@@ -417,6 +417,7 @@ nseq_NOR1=$(cat ${NEW_OUTPUT_Rev_1} | wc -l)
 
 done
 
-if "${SEARCH_ASVs}"=="YES"; then
+
+if [[ "${SEARCH_ASVs}" = "YES" ]]; then
 	Rscript "${SCRIPT_DIR}"/r/dada2.r "${DEMULT_DIR}" "${SCRIPT_DIR}"
 fi
