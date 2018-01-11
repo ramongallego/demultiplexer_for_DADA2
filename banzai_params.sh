@@ -172,6 +172,10 @@ cluster_radius="1"
 min_OTU_abun="0.005"
 # TODO: incorporate into OTU filtering script
 
+#New: allow for dada2
+
+SEARCH_ASVs="YES"
+
 ################################################################################
 # FILTER CHIMERIC SEQUENCES (vsearch)
 ################################################################################

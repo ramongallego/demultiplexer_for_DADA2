@@ -119,7 +119,7 @@ else
   echo 'ERROR:' 'At least one file is not valid'
   echo 'Looked in metadata columns' "${COLNUM_FILE1}" 'and' "${COLNUM_FILE2}"
   echo 'Aborting script'
-  exit 1
+  exit
 fi
 #here we play again
 if [[ "${SECONDARY_INDEX}" == "YES" ]]; then
@@ -199,7 +199,7 @@ ID2_ALL_RC=($( for i in "${ID2_ALL[@]}"; do revcom $i; done))
 # write file for translating demultiplexed output to samples
 SAMPLE_TRANS_FILE="${DEMULT_DIR}"/sample_trans.tmp
 for (( i=0; i < "${#ID2_ALL[@]}"; i++ )); do
-  printf "ID1=%s;ID2A=%s;ID2B=%s\t%s_%s\tsample=%s\n" \
+  printf "ID1=%s;ID2A=%s;ID2B=%s\t%s_%s\t%s\n" \
 	"${ID1_ALL[i]}" "${ID2_ALL[i]}" "${ID2_ALL_RC[i]}" \
 	"${ID1_ALL[i]}" "${ID2_ALL[i]}" \
 	"${SAMPLE_NAMES[i]}" >> "${SAMPLE_TRANS_FILE}"
@@ -251,18 +251,23 @@ for (( i=0; i < "${#FILE1[@]}"; i++ )); do
   BASE2="${FILE2[i]%.*}"
 
   mkdir "${DEMULT_DIR}"/"${ID1S[i]}"
+
+
 	mkdir "${DEMULT_DIR}"/cleaned/"${ID1S[i]}"
 
 
 
 
-#DEMULT_DIR="/Users/Moncho/trial_barcode_splitter/demult"
-#FASTA_file="/Users/Moncho/banzai_out_20171228_1748/barcodes.fasta"
-#READ1="/Users/Moncho/Google_Drive/Run_Nov17/OA_COI/171122_sub/Lib-A_S1_L001_R1_001_sub.fastq"
-#READ2="/Users/Moncho/Google_Drive/Run_Nov17/OA_COI/171122_sub/Lib-A_S1_L001_R2_001_sub.fastq"
 
 
-#version from banzai, comment it out from now on
+	#DEMULT_DIR="/Users/Moncho/trial_barcode_splitter/demult"
+	#FASTA_file="/Users/Moncho/banzai_out_20171228_1748/barcodes.fasta"
+	#READ1="/Users/Moncho/Google_Drive/Run_Nov17/OA_COI/171122_sub/Lib-A_S1_L001_R1_001_sub.fastq"
+	#READ2="/Users/Moncho/Google_Drive/Run_Nov17/OA_COI/171122_sub/Lib-A_S1_L001_R2_001_sub.fastq"
+
+
+	#version from banzai, comment it out from now on
+
 
 
 cutadapt -g file:"${Barcodes_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.1.fastq -p "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.2.fastq \
@@ -273,8 +278,17 @@ cutadapt -g file:"${Barcodes_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{na
 #but only looking at them on the .1 file -> do the same on the other file, and keep
 #the order of reads similar in both files
 
+
  for file in "${DEMULT_DIR}"/"${ID1S[i]}"/*round1.2.fastq; do
-  # List all files being used:
+
+
+	RIGHT_BARCODE=$(echo ${file} | awk '/_round1/ {
+	     match($0, /_round1/); print substr($0, RSTART - 6, 6);
+	     }')
+
+
+
+	# List all files being used:
   # file: .2.fastq; r1file, mid1,mid2, nof1, nof2, nor1,nor2
 
 	RIGHT_BARCODE=$(echo ${file} | awk '/_round1/ {
@@ -350,6 +364,7 @@ cutadapt -g file:"${Barcodes_file}" -o "${DEMULT_DIR}"/${ID1S[i]}/${ID1S[i]}-{na
   echo "and it has ${nseq_s2r1file} reads after trimming"
   echo "Hopefully the same number of lines as the mid R2 ${nseq_s2r2file}"
 
+
 # Now remove the pcr primers
 # This is an important point for libraries prepared by ligation:
 # The i7 adapters can ligate on either Fwd or Rev primer end- so you have
@@ -398,6 +413,7 @@ nseq_NOR1=$(cat ${NEW_OUTPUT_Rev_1} | wc -l)
 
 
 #print the summary information
+
   printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
   "${short_r1file}" "${nseq_r1file}" \
   "${short_file}" "${nseq_file}" \
@@ -425,4 +441,10 @@ nseq_NOR1=$(cat ${NEW_OUTPUT_Rev_1} | wc -l)
 
 
 done
+
+
 rm -rf "${DEMULT_DIR}"/cleaned
+
+if [[ "${SEARCH_ASVs}" = "YES" ]]; then
+	Rscript "${SCRIPT_DIR}"/r/dada2.r "${DEMULT_DIR}" "${SCRIPT_DIR}"
+fi
