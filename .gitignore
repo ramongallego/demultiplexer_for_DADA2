@@ -1,0 +1,7 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+scripts/r/
+.DS_Store
+scripts/.DS_Store
