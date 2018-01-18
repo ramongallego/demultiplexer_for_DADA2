@@ -25,6 +25,8 @@ library(devtools)
 library(tidyverse)
 library(stringr)
 library (dada2)
+library (Biostrings)
+browseVignettes("Biostrings")
 #fastq.folder="/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180108_1539"
 sample.map<-read_delim(paste0(fastq.folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
 
@@ -76,15 +78,21 @@ plotQualityProfile(F2sgood[1:4])
 filt_path <- file.path(path1, "filtered") # Place filtered files in filtered/ subdirectory
 filtF1s <- file.path(filt_path, paste0(good.sample.names, "_F1_filt.fastq.gz"))
 filtF2s <- file.path(filt_path, paste0(good.sample.names, "_F2_filt.fastq.gz"))
-out <- filterAndTrim(F1sgood, filtF1s, F2sgood, filtF2s, truncLen=c(240,160),
+out_Fs <- filterAndTrim(F1sgood, filtF1s, F2sgood, filtF2s, truncLen=c(240,160),
                       maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
+
+filtR1s <- file.path(filt_path, paste0(good.sample.names, "_R1_filt.fastq.gz"))
+filtR2s <- file.path(filt_path, paste0(good.sample.names, "_R2_filt.fastq.gz"))
+out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(240,160),
+                      maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
+                      compress=TRUE, multithread=TRUE)
 ```
 
 
 ```{r}
-out_tibble<-tibble(file=dimnames(out)[[1]], reads.out=out[,2])
-
+out_Fs_tibble<-tibble(file=dimnames(out_Fs)[[1]], reads.out=out_Fs[,2])
+out_Rs_tibble<-tibble(file=dimnames(out_Rs)[[1]], reads.out=out_Rs[,2])
 
 ```
 
@@ -93,6 +101,9 @@ Now the first crucial step: learning the error rates that would be different for
 ```{r, echo=F}
 errF1 <- learnErrors(filtF1s, multithread=TRUE)
 errF2 <- learnErrors(filtF2s, multithread=TRUE)
+errR1 <- learnErrors(filtR1s, multithread=TRUE)
+errR2 <- learnErrors(filtR2s, multithread=TRUE)
+
 ```
 
 Which we can plot now to see the error rates between transitions of each pair of nt
@@ -100,32 +111,45 @@ Which we can plot now to see the error rates between transitions of each pair of
 
 plotErrors(errF1, nominalQ = T)
 plotErrors(errF2, nominalQ = T)
+plotErrors(errR1, nominalQ = T)
+plotErrors(errR2, nominalQ = T)
+
 
 ```
 
 ## Now go to the dereplication step
 
 ```{r, echo=F,message=FALSE}
-derepFs <- derepFastq(filtF1s, verbose=TRUE)
-derepRs <- derepFastq(filtF2s, verbose=TRUE)
+derepF1s <- derepFastq(filtF1s, verbose=TRUE)
+derepF2s <- derepFastq(filtF2s, verbose=TRUE)
+derepR1s <- derepFastq(filtR1s, verbose=TRUE)
+derepR2s <- derepFastq(filtR2s, verbose=TRUE)
+
 # Name the derep-class objects by the sample names
-names(derepFs) <- good.sample.names
-names(derepRs) <- good.sample.names
+names(derepF1s) <- names(derepF2s) <- good.sample.names
+
+names(derepR1s) <- names(derepR2s) <- good.sample.names
+
 ```
 
 ## And finally an inference of the sample composition
 
 ```{r,message=FALSE}
-dadaFs <- dada(derepFs, err = errF1, multithread = TRUE)
-dadaRs <- dada(derepRs, err = errF2, multithread = TRUE)
+dadaF1s <- dada(derepF1s, err = errF1, multithread = TRUE)
+dadaF2s <- dada(derepF2s, err = errF2, multithread = TRUE)
+dadaR1s <- dada(derepR1s, err = errR1, multithread = TRUE)
+dadaR2s <- dada(derepR2s, err = errR2, multithread = TRUE)
+
 ```
 
 ## We are ready now to merge reads - using the denoised reads and the derep files
 
 ```{r}
 
-mergersF<-mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose=T)
+mergersF <- mergePairs(dadaF1s, derepF1s, dadaF2s, derepF2s, verbose=T)
 head(mergersF[[1]])
+mergersR <- mergePairs(dadaR1s, derepR1s, dadaR2s, derepR2s, verbose = T)
+head(mergersR[[1]])
 
 ```
 
@@ -133,11 +157,36 @@ head(mergersF[[1]])
 
 ```{r}
 
-seqtab <- makeSequenceTable(mergersF)
+seqtabF <- makeSequenceTable(mergersF)
 
-dim(seqtab)
+dim(seqtabF)
 
-table(nchar(getSequences(seqtab)))
+table(nchar(getSequences(seqtabF)))
+
+seqtabR <- makeSequenceTable(mergersR)
+
+dim(seqtabR)
+
+table(nchar(getSequences(seqtabR)))
+
+reversed_sequences<-as.character(reverseComplement(DNAStringSet(colnames(seqtabR))))
+
+summary (colnames(seqtabF) %in% reversed_sequences)
+
+summary (reversed_sequences %in% colnames(seqtabF))
+
+
+
+colnames(seqtabR)<-reversed_sequences
+
+seqtab.F.df=as.data.frame(seqtabF)
+seqtab.F.df$sample=rownames(seqtab.F.df)
+
+seqtab.R.df=as.data.frame(seqtabR)
+seqtab.R.df$sample=rownames(seqtab.R.df)
+
+seq.F_tidy<- as.tibble(gather(seqtab.F.df, key=Sequence, value = nReads, -sample))
+seq.R_tidy<- as.tibble(gather(seqtab.R.df, key=Sequence, value = nReads, -sample))
 
 ```
 
@@ -145,8 +194,8 @@ table(nchar(getSequences(seqtab)))
 
 ```{r, message=F}
 
-seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
-dim(seqtab.nochim)
+seqtab.nochim <- removeBimeraDenovo(seqtabF, method="consensus", multithread=TRUE, verbose=TRUE)
+dim(seqtab.nochim.F)
 
 library(vegan)
 dis_bc<-vegdist(seqtab.nochim, method = "bray",binary = F, diag=T,upper=T)
