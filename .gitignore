@@ -2,6 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
-scripts/r/*
+scripts/r/*.html
 .DS_Store
 scripts/.DS_Store

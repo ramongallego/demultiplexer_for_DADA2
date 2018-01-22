@@ -1,0 +1,40 @@
+---
+title: "Community analysis on Dada2 data"
+author: "Ramón Gallego"
+date: "1/12/2018"
+output: html_document
+params:
+  folder: 
+    value: x
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir=params$folder)
+```
+
+## This is a quick report on the output of a MiSeq run
+
+To get a report similar to this, with a newly analised dataset, just check yes on the biodiversity report field of the parameters file.
+
+
+```{r cars}
+fastq.folder
+library(tidyverse)
+sample.map<-read_delim(paste0(fastq.folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
+metadata.file<-read.csv(paste0(fastq.folder,"/metadata.csv"),colClasses = "character") %>% 
+  as.tibble() %>%
+  select(sample_id,Site,Month,biological_replicate,PCR_replicate)
+ASV_table<-read_csv((paste0(fastq.folder,"/DUP_table.csv")))
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
