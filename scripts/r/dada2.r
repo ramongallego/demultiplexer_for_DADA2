@@ -18,6 +18,8 @@ fastq.folder<-arguments[1]
 
 scripts.folder <-arguments[2]
 
+
+
 #list.files()
 setwd (scripts.folder)
 getwd ()

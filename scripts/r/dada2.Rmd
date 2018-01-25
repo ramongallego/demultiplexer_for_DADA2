@@ -4,9 +4,9 @@ author: "Ramón Gallego"
 date: "1/9/2018"
 output: html_document
 params:
-  folder: 
+  folder:
     value: x
-    
+
 ---
 
 ```{r setup, include=FALSE}
@@ -20,23 +20,23 @@ knitr::opts_knit$set(root.dir=params$folder)
 You have successfully split your libraries into a pair (or two) of fastq files per sample. Now let's import the output of demultiplex_both_fastq.sh  
 
 First load the packages. And let's update the parameters we need
-```{r, echo=FALSE ,message=FALSE}
+```{r loading packages, echo=FALSE ,message=FALSE}
 library(devtools)
 library(tidyverse)
 library(stringr)
 library (dada2)
 library (Biostrings)
-browseVignettes("Biostrings")
+
 #fastq.folder="/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180108_1539"
 sample.map<-read_delim(paste0(fastq.folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
+head (sample.map)
 
-list.files(path = params$folder)
-path1= params$folder
+path1= paste0(params$folder,"/demultiplexed")
 #path1= "/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180108_1539"
 ```
 
 Firstly, we'll find the patterns that separate our Fwd, Rev, .1 and .2 files. look at the quality of the .1 and .2 reads
-```{r}
+```{r listing files}
 
 F1s <- sort(list.files(path1, pattern="_Fwd.1.fastq", full.names = TRUE))
 F2s <- sort(list.files(path1, pattern="_Fwd.2.fastq", full.names = TRUE))
@@ -58,24 +58,24 @@ R2sgood<-R2s[sample.names %in% sample.map$fastq_header]
 
 A nice idea is to plot the Quality of the F1 reads
 
-```{r , echo=FALSE}
+```{r qplot1, echo=FALSE}
 plotQualityProfile(F1sgood[1:4])
 ```
 
 The quality should be similar to that of the Reverse .1 reads
 
-```{r , echo=FALSE}
+```{r plot2, echo=FALSE}
 plotQualityProfile(R1sgood[1:4])
 ```
 
-On the other hand, the quality of the .2 reads should decrease earlier 
-```{r , echo=FALSE}
+On the other hand, the quality of the .2 reads should decrease earlier
+```{r qplot3, echo=FALSE}
 plotQualityProfile(F2sgood[1:4])
 ```
 
 ## Now start with the trimming of each read based on the quality we just plotted
-```{r}
-filt_path <- file.path(path1, "filtered") # Place filtered files in filtered/ subdirectory
+```{r filter and trim}
+filt_path <- file.path(params$folder, "/filtered") # Place filtered files in filtered/ subdirectory
 filtF1s <- file.path(filt_path, paste0(good.sample.names, "_F1_filt.fastq.gz"))
 filtF2s <- file.path(filt_path, paste0(good.sample.names, "_F2_filt.fastq.gz"))
 out_Fs <- filterAndTrim(F1sgood, filtF1s, F2sgood, filtF2s, truncLen=c(240,160),
@@ -90,7 +90,7 @@ out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(240,160),
 ```
 
 
-```{r}
+```{r as tibble}
 out_Fs_tibble<-tibble(file=dimnames(out_Fs)[[1]], reads.out=out_Fs[,2])
 out_Rs_tibble<-tibble(file=dimnames(out_Rs)[[1]], reads.out=out_Rs[,2])
 
@@ -98,7 +98,7 @@ out_Rs_tibble<-tibble(file=dimnames(out_Rs)[[1]], reads.out=out_Rs[,2])
 
 Now the first crucial step: learning the error rates that would be different for fwd and rev reads
 
-```{r, echo=F}
+```{r learning errors, echo=F}
 errF1 <- learnErrors(filtF1s, multithread=TRUE)
 errF2 <- learnErrors(filtF2s, multithread=TRUE)
 errR1 <- learnErrors(filtR1s, multithread=TRUE)
@@ -107,7 +107,7 @@ errR2 <- learnErrors(filtR2s, multithread=TRUE)
 ```
 
 Which we can plot now to see the error rates between transitions of each pair of nt
-```{r}
+```{r plotErrors}
 
 plotErrors(errF1, nominalQ = T)
 plotErrors(errF2, nominalQ = T)
@@ -119,7 +119,7 @@ plotErrors(errR2, nominalQ = T)
 
 ## Now go to the dereplication step
 
-```{r, echo=F,message=FALSE}
+```{r dereplication, echo=F,message=FALSE}
 derepF1s <- derepFastq(filtF1s, verbose=TRUE)
 derepF2s <- derepFastq(filtF2s, verbose=TRUE)
 derepR1s <- derepFastq(filtR1s, verbose=TRUE)
@@ -134,7 +134,7 @@ names(derepR1s) <- names(derepR2s) <- good.sample.names
 
 ## And finally an inference of the sample composition
 
-```{r,message=FALSE}
+```{r dadaing, message=FALSE}
 dadaF1s <- dada(derepF1s, err = errF1, multithread = TRUE)
 dadaF2s <- dada(derepF2s, err = errF2, multithread = TRUE)
 dadaR1s <- dada(derepR1s, err = errR1, multithread = TRUE)
@@ -144,7 +144,7 @@ dadaR2s <- dada(derepR2s, err = errR2, multithread = TRUE)
 
 ## We are ready now to merge reads - using the denoised reads and the derep files
 
-```{r}
+```{r merging pairs}
 
 mergersF <- mergePairs(dadaF1s, derepF1s, dadaF2s, derepF2s, verbose=T)
 head(mergersF[[1]])
@@ -155,7 +155,7 @@ head(mergersR[[1]])
 
 ## And we can now construct the sequence abundance table
 
-```{r}
+```{r makingsequenceTable}
 
 seqtabF <- makeSequenceTable(mergersF)
 
@@ -192,10 +192,10 @@ seq.R_tidy<- as.tibble(gather(seqtab.R.df, key=Sequence, value = nReads, -sample
 
 ## Now get rid of the chimeras
 
-```{r, message=F}
+```{r RemovingChimeras, message=F}
 
 seqtab.nochim <- removeBimeraDenovo(seqtabF, method="consensus", multithread=TRUE, verbose=TRUE)
-dim(seqtab.nochim.F)
+dim(seqtab.nochim)
 
 library(vegan)
 dis_bc<-vegdist(seqtab.nochim, method = "bray",binary = F, diag=T,upper=T)
@@ -205,29 +205,29 @@ dis_bc<-vegdist(seqtab.nochim, method = "bray",binary = F, diag=T,upper=T)
 ```
 
 We are going to keep the info in a tidyr format
-```{r}
+```{r tidying and writing}
 
 seqtab.nochim.df=as.data.frame(seqtab.nochim)
 seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
 
 seqs_tidy<-gather(seqtab.nochim.df, key=Sequence, value = nReads, -sample)
-inner_join(sample.map[,2:3],seqs_tidy,by = c("fastq_header" = "sample")) %>% 
+inner_join(sample.map[,2:3],seqs_tidy,by = c("fastq_header" = "sample")) %>%
   select(-fastq_header) %>%
-  write_csv(paste0(path1,"/DUP_table.csv"))
+  write_csv(paste0(params$folder,"/DUP_table.csv"))
 
 ```
-TODO: I don't like the format of the output: we should 
+TODO: I don't like the format of the output: we should
 
 ##Track the fate of all reads
-```{r}
+```{r output_summary}
 
 getN <- function(x) sum(getUniques(x))
-track <- as.data.frame(cbind(out, sapply(dadaFs, getN), sapply(mergersF, getN), rowSums(seqtab), rowSums(seqtab.nochim)))
+track <- as.data.frame(cbind(out_Fs, sapply(dadaF1s, getN), sapply(mergersF, getN), rowSums(seqtabF), rowSums(seqtab.nochim)))
 # If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
 colnames(track) <- c("input", "filtered", "denoised", "merged", "tabled", "nonchim")
 track$sample <- good.sample.names
 inner_join(sample.map[,2:3],track, by = c("fastq_header"="sample")) %>%
   select(-fastq_header) %>%
-  write_csv(paste0(path1,"/dada2_summary.csv"))
+  write_csv(paste0(params$folder,"/dada2_summary.csv"))
 
 ```
