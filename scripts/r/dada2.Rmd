@@ -50,11 +50,11 @@ sample.names <- str_replace(basename(F1s), "_Fwd.1.fastq","")
 
 good.sample.names<-sample.names[sample.names %in% sample.map$fastq_header]
 # Introduce here the biological counterpart of the fastq file
-map_sample[,3][match(map_otu[,2], map_sample[,1])]
+
 real.sample.name <- sample.map[,3][match(good.sample.names,sample.map$fastq_header),1]
-  
+
 # Now subset the number of files to be looked at
-  
+
 F1sgood<-F1s[sample.names %in% sample.map$fastq_header]
 F2sgood<-F2s[sample.names %in% sample.map$fastq_header]
 R1sgood<-R1s[sample.names %in% sample.map$fastq_header]
@@ -196,31 +196,31 @@ Step 3 does the actual merging and returns another sequence Table
 
 seqtab.R.df=as.data.frame(seqtabR)
 
-final.seqtab<-data.frame(row.names = rownames(seqtab.F.df))
+final.seqtab<-data.frame(row.names = rownames(seqtabF))
 
 
 for (i in 1:ncol(seqtabF)) {   #for each column of the first dataframe
-  
+
   current_seq<-colnames(seqtabF)[i]
-  
+
   if (current_seq %in% colnames(seqtab.R.df)) { # is that column present on the second df?
-    
+
     final.seqtab[,current_seq]<-seqtabF[,i] + seqtab.R.df[,current_seq] #if yes, the new df has the sum of reads
-    
+
     seqtab.R.df[,current_seq]<-NULL
     #seqtab.R2.df<- seqtab.R2.df[,-current_seq] #we delete the column from the second df to speed up next search
-    
+
     print (ncol (seqtab.R.df)) #check that is true
-    
-    
+
+
   } else {        # if the column is not present, then the new df is the value of the first df
-    
+
     final.seqtab[,current_seq] <- seqtabF[,i]
-    
+
   }
-  
-  
-  
+
+
+
 }
 # Now cbind both dataset
 final.seqtab <- as.matrix (cbind(final.seqtab,seqtab.R.df))
