@@ -50,14 +50,16 @@ fi
 START_TIME=$(date +%Y%m%d_%H%M)
 OUTPUT_DIR="${OUTPUT_DIRECTORY}"/demultiplexed_"${START_TIME}"
 
-if [[ -d "${OUTPUT_DIRECTORY}" ]]; then
-  mkdir "${OUTPUT_DIR}"
-  echo "Output files would be in ${OUTPUT_DIR}"
-else
-  mkdir "${OUTPUT_DIRECTORY}"
-  mkdir "${OUTPUT_DIR}"
-  echo "Output files would be in ${OUTPUT_DIR}"
-fi
+mkdir "${OUTPUT_DIR}"
+
+#if [[ -d "${OUTPUT_DIRECTORY}" ]]; then
+
+#  echo "Output files would be in ${OUTPUT_DIR}"
+#else
+#  mkdir "${OUTPUT_DIRECTORY}"
+#  mkdir "${OUTPUT_DIR}"
+#  echo "Output files would be in ${OUTPUT_DIR}"
+#fi
 mkdir "${OUTPUT_DIR}"/cleaned
 DEMULT_DIR="${OUTPUT_DIR}"/demultiplexed
 mkdir "${DEMULT_DIR}"

@@ -1,31 +1,25 @@
-seqtabF
-seqtabR
+seqtab.R.df=as.data.frame(seqtabR)
 
-head(seqtabF)
-head(seqtabR)
-
-seqtab.F.df
-seqtab.R2.df <- seqtab.R.df
 final.seqtab<-data.frame(row.names = rownames(seqtab.F.df))
 
 
-for (i in 1:ncol(seqtab.F.df)) {   #for each column of the first dataframe
+for (i in 1:ncol(seqtabF)) {   #for each column of the first dataframe
   
-  current_seq<-colnames(seqtab.F.df)[i]
+  current_seq<-colnames(seqtabF)[i]
   
-  if (current_seq %in% colnames(seqtab.R2.df)) { # is that column present on the second df?
+  if (current_seq %in% colnames(seqtab.R.df)) { # is that column present on the second df?
     
-    final.seqtab[,current_seq]<-seqtab.F.df[,i] + seqtab.R2.df[,current_seq] #if yes, the new df has the sum of reads
+    final.seqtab[,current_seq]<-seqtabF[,i] + seqtab.R.df[,current_seq] #if yes, the new df has the sum of reads
     
-    seqtab.R2.df[,current_seq]<-NULL
+    seqtab.R.df[,current_seq]<-NULL
     #seqtab.R2.df<- seqtab.R2.df[,-current_seq] #we delete the column from the second df to speed up next search
     
-    print (ncol (seqtab.R2.df)) #check that is true
+    print (ncol (seqtab.R.df)) #check that is true
     
     
   } else {        # if the column is not present, then the new df is the value of the first df
     
-    final.seqtab[,current_seq] <- seqtab.F.df[,i]
+    final.seqtab[,current_seq] <- seqtabF[,i]
     
   }
   
@@ -33,8 +27,6 @@ for (i in 1:ncol(seqtab.F.df)) {   #for each column of the first dataframe
   
 }
 # Now cbind both dataset
-final.seqtab <- cbind(final.seqtab,seqtab.R2.df)
-
-fst<-as.tibble(gather(final.seqtab, key=sequence, value = abundance, -sample))
-
-test2<-getUniques(fst)
+final.seqtab <- as.matrix (cbind(final.seqtab,seqtab.R.df))
+#TODO: All the above should be in a function, and just call it from the main script
+removeBimeraDenovo(test2)

@@ -49,6 +49,12 @@ sample.names <- str_replace(basename(F1s), "_Fwd.1.fastq","")
 #Now use only those that reflect a real sample
 
 good.sample.names<-sample.names[sample.names %in% sample.map$fastq_header]
+# Introduce here the biological counterpart of the fastq file
+map_sample[,3][match(map_otu[,2], map_sample[,1])]
+real.sample.name <- sample.map[,3][match(good.sample.names,sample.map$fastq_header),1]
+  
+# Now subset the number of files to be looked at
+  
 F1sgood<-F1s[sample.names %in% sample.map$fastq_header]
 F2sgood<-F2s[sample.names %in% sample.map$fastq_header]
 R1sgood<-R1s[sample.names %in% sample.map$fastq_header]
@@ -126,9 +132,9 @@ derepR1s <- derepFastq(filtR1s, verbose=TRUE)
 derepR2s <- derepFastq(filtR2s, verbose=TRUE)
 
 # Name the derep-class objects by the sample names
-names(derepF1s) <- names(derepF2s) <- good.sample.names
+rownames(out_Fs) <- names(derepF1s) <- names(derepF2s) <- real.sample.name$Sample
 
-names(derepR1s) <- names(derepR2s) <- good.sample.names
+rownames(out_Rs) <- names(derepR1s) <- names(derepR2s) <- real.sample.name$Sample
 
 ```
 
@@ -153,9 +159,10 @@ head(mergersR[[1]])
 
 ```
 
-## And we can now construct the sequence abundance table
+## Now we have to merge the Forward and Reverse Reads to make a unique object
 
-```{r makingsequenceTable}
+Step 1 is to create sequence tables for each direction, seqtabF and seqtabR
+```{r merging F and R (1)}
 
 seqtabF <- makeSequenceTable(mergersF)
 
@@ -168,25 +175,55 @@ seqtabR <- makeSequenceTable(mergersR)
 dim(seqtabR)
 
 table(nchar(getSequences(seqtabR)))
+```
 
+
+Step  2 is to reverse complement the reverse reads, and checking how many of the reads in F were present in R (if you get a 0 means we have done soemthing wrong). Lastly, we change the reverse sequences and add their Reverse complement instead
+```{r merging F and R (2)}
 reversed_sequences<-as.character(reverseComplement(DNAStringSet(colnames(seqtabR))))
 
 summary (colnames(seqtabF) %in% reversed_sequences)
 
 summary (reversed_sequences %in% colnames(seqtabF))
 
-
-
 colnames(seqtabR)<-reversed_sequences
 
-seqtab.F.df=as.data.frame(seqtabF)
-seqtab.F.df$sample=rownames(seqtab.F.df)
+```
+
+Step 3 does the actual merging and returns another sequence Table
+
+```{r merging F and R (3)}
 
 seqtab.R.df=as.data.frame(seqtabR)
-seqtab.R.df$sample=rownames(seqtab.R.df)
 
-seq.F_tidy<- as.tibble(gather(seqtab.F.df, key=Sequence, value = nReads, -sample))
-seq.R_tidy<- as.tibble(gather(seqtab.R.df, key=Sequence, value = nReads, -sample))
+final.seqtab<-data.frame(row.names = rownames(seqtab.F.df))
+
+
+for (i in 1:ncol(seqtabF)) {   #for each column of the first dataframe
+  
+  current_seq<-colnames(seqtabF)[i]
+  
+  if (current_seq %in% colnames(seqtab.R.df)) { # is that column present on the second df?
+    
+    final.seqtab[,current_seq]<-seqtabF[,i] + seqtab.R.df[,current_seq] #if yes, the new df has the sum of reads
+    
+    seqtab.R.df[,current_seq]<-NULL
+    #seqtab.R2.df<- seqtab.R2.df[,-current_seq] #we delete the column from the second df to speed up next search
+    
+    print (ncol (seqtab.R.df)) #check that is true
+    
+    
+  } else {        # if the column is not present, then the new df is the value of the first df
+    
+    final.seqtab[,current_seq] <- seqtabF[,i]
+    
+  }
+  
+  
+  
+}
+# Now cbind both dataset
+final.seqtab <- as.matrix (cbind(final.seqtab,seqtab.R.df))
 
 ```
 
@@ -194,40 +231,42 @@ seq.R_tidy<- as.tibble(gather(seqtab.R.df, key=Sequence, value = nReads, -sample
 
 ```{r RemovingChimeras, message=F}
 
-seqtab.nochim <- removeBimeraDenovo(seqtabF, method="consensus", multithread=TRUE, verbose=TRUE)
-dim(seqtab.nochim)
+seqtab.nochim <- removeBimeraDenovo(final.seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
 
-library(vegan)
-dis_bc<-vegdist(seqtab.nochim, method = "bray",binary = F, diag=T,upper=T)
-
+dim(seqtab.nochim)  
 
 
 ```
 
-We are going to keep the info in a tidyr format
+We are going to keep the info in a tidyr format and save it into a csv file
 ```{r tidying and writing}
 
 seqtab.nochim.df=as.data.frame(seqtab.nochim)
 seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
 
-seqs_tidy<-gather(seqtab.nochim.df, key=Sequence, value = nReads, -sample)
-inner_join(sample.map[,2:3],seqs_tidy,by = c("fastq_header" = "sample")) %>%
-  select(-fastq_header) %>%
+gather(seqtab.nochim.df, key=Sequence, value = nReads, -sample) %>%
+  filter(nReads > 0) %>%
   write_csv(paste0(params$folder,"/DUP_table.csv"))
 
 ```
-TODO: I don't like the format of the output: we should
+
 
 ##Track the fate of all reads
 ```{r output_summary}
 
 getN <- function(x) sum(getUniques(x))
-track <- as.data.frame(cbind(out_Fs, sapply(dadaF1s, getN), sapply(mergersF, getN), rowSums(seqtabF), rowSums(seqtab.nochim)))
+track <- as.data.frame(cbind(out_Fs, out_Rs,
+                             sapply(dadaF1s, getN), sapply(dadaR1s, getN),
+                             sapply(mergersF, getN),sapply(mergersR, getN),
+                             rowSums(seqtabF),rowSums(seqtabR),
+                             rowSums(final.seqtab), rowSums(seqtab.nochim)))
 # If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
-colnames(track) <- c("input", "filtered", "denoised", "merged", "tabled", "nonchim")
-track$sample <- good.sample.names
-inner_join(sample.map[,2:3],track, by = c("fastq_header"="sample")) %>%
-  select(-fastq_header) %>%
-  write_csv(paste0(params$folder,"/dada2_summary.csv"))
+colnames(track) <- c("input_F", "input_R", "filtered_F","filtered_R",
+                     "denoised_F", "denoised_R",
+                     "merged_F", "merged_R",
+                     "tabled_F", "tabled_R",
+                     "tabled_together", "nonchim")
+
+write_csv(track, paste0(params$folder,"/dada2_summary.csv"))
 
 ```
