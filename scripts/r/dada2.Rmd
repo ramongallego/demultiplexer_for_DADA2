@@ -246,7 +246,7 @@ seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
 
 gather(seqtab.nochim.df, key=Sequence, value = nReads, -sample) %>%
   filter(nReads > 0) %>%
-  write_csv(paste0(params$folder,"/DUP_table.csv"))
+  write_csv(paste0(params$folder,"/ASV_table.csv"))
 
 ```
 
