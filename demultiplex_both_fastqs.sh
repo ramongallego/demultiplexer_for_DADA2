@@ -418,5 +418,5 @@ done
 rm -rf "${OUTPUT_DIR}"/cleaned
 
 if [[ "${SEARCH_ASVs}" = "YES" ]]; then
-	Rscript "${SCRIPT_DIR}"/r/dada2.r "${OUTPUT_DIR}" "${SCRIPT_DIR}"
+	Rscript "${SCRIPT_DIR}"/r/dada2.r "${OUTPUT_DIR}" "${SCRIPT_DIR}" "${USE_HASH}"
 fi
