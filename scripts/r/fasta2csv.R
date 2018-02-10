@@ -1,5 +1,5 @@
-input <- readLines("/Users/rgallego/fastqs_demultiplexed_for_DADA2/banzai_out_20180207_1530/all_lib/derep.fasta")
-output <- file("/Users/rgallego/fastqs_demultiplexed_for_DADA2/banzai_out_20180207_1530/all_lib/derep.csv","w")
+input <- readLines("/Users/rgallego/fastqs_demultiplexed_for_DADA2/banzai_out_20180207_1704/all_lib/derep.fasta")
+output <- file("/Users/rgallego/fastqs_demultiplexed_for_DADA2/banzai_out_20180207_1704/all_lib/derep.csv","w")
 
 currentSeq <- 0
 newLine <- 0

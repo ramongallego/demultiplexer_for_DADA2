@@ -155,9 +155,33 @@ dadaR2s <- dada(derepR2s, err = errR2, multithread = TRUE)
 ```{r merging pairs}
 
 mergersF <- mergePairs(dadaF1s, derepF1s, dadaF2s, derepF2s, verbose=T)
-head(mergersF[[1]])
+
+#Run a for loop that adds the number of unique reads that went into each ASV
+
+for (j in 1:length(mergersF)){
+  
+  dadaF1s[[j]]@.Data[[2]] %>% rownames_to_column(var="forward") %>% select("forward", "nunq") ->Fwd
+  Fwd$forward<-as.integer(Fwd$forward)
+  dadaF2s[[j]]@.Data[[2]] %>% rownames_to_column(var="reverse") %>% select("reverse", "nunq") ->Rev
+  Rev$reverse<-as.integer(Rev$reverse)
+  
+  mergersF[[j]] <- left_join(mergersF[[j]],Fwd, by="forward") %>% left_join(Rev, by="reverse") %>% mutate(nunq=pmin(nunq.x,nunq.y)) %>% select(-nunq.x,-nunq.y)
+    
+  
+}
+
 mergersR <- mergePairs(dadaR1s, derepR1s, dadaR2s, derepR2s, verbose = T)
-head(mergersR[[1]])
+
+for (j in 1:length(mergersR)){
+  
+  dadaR1s[[j]]@.Data[[2]] %>% rownames_to_column(var="forward") %>% select("forward", "nunq") ->Fwd
+  Fwd$forward<-as.integer(Fwd$forward)
+  dadaR2s[[j]]@.Data[[2]] %>% rownames_to_column(var="reverse") %>% select("reverse", "nunq") ->Rev
+  Rev$reverse<-as.integer(Rev$reverse)
+  
+  mergersR[[j]] <- left_join(mergersR[[j]],Fwd, by="forward") %>% left_join(Rev, by="reverse") %>% mutate(nunq=pmin(nunq.x,nunq.y)) %>% select(-nunq.x,-nunq.y)
+    
+}
 
 ```
 

@@ -18,17 +18,58 @@ knitr::opts_knit$set(root.dir=params$folder)
 To get a report similar to this, with a newly analised dataset, just check yes on the biodiversity report field of the parameters file.
 
 
-```{r cars}
+```{r load packages and files}
 fastq.folder
 library(tidyverse)
+library(vegan)
 sample.map<-read_delim(paste0(fastq.folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
-metadata.file<-read.csv(paste0(fastq.folder,"/metadata.csv"),colClasses = "character") %>% 
+metadata.file<-read.csv(paste0(fastq.folder,"/EJP_Halo_1Rep_metadata_sub_fix.csv"),colClasses = "character") %>% 
   as.tibble() %>%
-  select(sample_id,Site,Month,biological_replicate,PCR_replicate)
-ASV_table<-read_csv((paste0(fastq.folder,"/DUP_table.csv")))
+  select(sample_id,Site,Month,Position,Distance)
+metadata.file.ostrich <- metadata.file %>% filter (str_detect(sample_id,"Ostrich"))
+metadata.file <-   metadata.file %>% filter (!str_detect(sample_id,"Ostrich"))
+
+metadata.file$Distance <-metadata.file$Distance %>% fct_relevel("0","1", "3", "6","10", "15") 
+
+ASV_table<-read_csv((paste0(fastq.folder,"/ASV_table.csv")))
 
 ```
 
+## Starting basic stats
+
+Let's analyze the basics of the run you just made.
+
+First we'll look at the number of ASVs, number of reads, and other univariate statistics per sample, and how they average across biological replicates
+
+```{r univariate stats}
+
+ASV_table <- ASV_table %>%
+  inner_join(metadata.file, by=c("sample"="sample_id")) %>%
+  group_by(sample) %>% mutate("Number_of_ASVs"  = n_distinct(Sequence),
+                              "Number_of_Reads" = sum(nReads),
+                              "Margalef_index" = round((Number_of_ASVs-1)/log(Number_of_Reads),2)) %>%                            
+  group_by(sample,Sequence) %>% mutate ("pi" = nReads/Number_of_Reads) %>%
+  
+  group_by(sample) %>% mutate("Shannon_diversity" = -sum(pi * log(pi)),
+                              "Pielou_equity" = Shannon_diversity/log(Number_of_ASVs)
+                               ) 
+
+#EJPs visualization calls for two datasets, along and across, both with bare and eelgrass data for reference
+Data.to.plot <- ASV_table %>% filter(Position !="Across") %>% mutate(ds="Along")
+Data.to.plot <- ASV_table %>% filter(Position !="Along") %>% mutate(ds="Across") %>% rbind (Data.to.plot)  
+Data.to.plot$Distance <- fct_recode(Data.to.plot$Distance, "Eelgrass" = "0", "Bare" = "50")
+ggplot(data = Data.to.plot,aes(x = Distance)) + 
+  geom_boxplot(aes(y=Pielou_equity))+
+  facet_grid(Site~ds)
+
+ggplot(data = Data.to.plot,aes(x = Distance)) + 
+  geom_boxplot(aes(y=Shannon_diversity))+
+  facet_grid(Site~ds)
+
+ggplot(data = filter(ASV_table,Position !="Across"),aes(x = Distance)) + 
+geom_boxplot(aes(y=Shannon_diversity), color= "red")+
+  ggtitle("Across coast")+
+  facet_grid(Site~.)
 ## Including Plots
 
 You can also embed plots, for example:
