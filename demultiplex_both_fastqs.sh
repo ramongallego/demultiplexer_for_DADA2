@@ -157,6 +157,30 @@ echo "and they seem to be sorted alphabetically?"
 echo "and they are this long "
 echo "ID2_LENGTH  es ${ID2_LENGTH}"
 
+##ADDED LOGFILE ##
+if [[ "${ADD_TO_PREVIOUS}" = "YES" ]]; then
+	echo "You chose to add this analysis to a previous one"
+	if [[ -n "${FORMER_HASH}" && -n "${FORMER_ABUNDANCE}" ]]; then
+		echo "Using hash database from ${FORMER_HASH}"
+		echo "Using ASV table from ${FORMER_ABUNDANCE}"
+	else
+		echo "Uppss, at least one of these files is missing"
+		echo " - A Hash / sequence conversion table"
+		echo " - An Abundance dataset "
+		echo "Set the path to these files in the params file"
+		exit
+	fi
+
+	if [[ -s "${LOG_FILE}" ]] ; then
+		echo "Adding merge information to ${LOG_FILE}"
+	else
+		echo "No logfile provided or found"
+		echo "Starting a new merge logfile"
+		LOG_FILE="${OUTPUT_DIR}"/database_log.csv
+		echo "New file is ${LOG_FILE}"
+	fi
+fi
+
 ##ANOTHER CHUNK ##
 ################################################################################
 # Read in primers
@@ -418,5 +442,6 @@ done
 rm -rf "${OUTPUT_DIR}"/cleaned
 
 if [[ "${SEARCH_ASVs}" = "YES" ]]; then
-	Rscript "${SCRIPT_DIR}"/r/dada2.r "${OUTPUT_DIR}" "${SCRIPT_DIR}" "${USE_HASH}"
+	Rscript "${SCRIPT_DIR}"/r/dada2.r "${OUTPUT_DIR}" "${SCRIPT_DIR}" "${USE_HASH}" \
+	"${ADD_TO_PREVIOUS}" "${FORMER_HASH}" "${FORMER_ABUNDANCE}" "${LOG_FILE}"
 fi

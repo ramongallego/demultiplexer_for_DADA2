@@ -5,7 +5,7 @@
 # INPUT
 ################################################################################
 # What is the file path to the directory containing all of the libraries/reads?
-PARENT_DIR="/Users/rgallego/Google_Drive/Kelly_Lab/Projects/HALO/Data/Raw_Sequence_Data/EJP_round1"
+PARENT_DIR="/Users/Moncho/Google_Drive/Kelly_Lab/Projects/HALO/Data/Raw_Sequence_Data/EJP_round1"
 
 # Where is the sequencing metadata file? (SEE FORMATTING GUIDELINES IN README!)
 SEQUENCING_METADATA="${PARENT_DIR}"/EJP_Halo_1Rep_metadata.csv
@@ -225,13 +225,15 @@ FILTERED_OUTPUT='/Users/threeprime/Documents/Data/IlluminaData/12S/20140930/Anal
 ################################################################################
 #Would you like to add this analysis to a previous set of samples already processed?
 
-# You should provide a fasta file with all sequences, and a csv with the previous abundance data
-# It will add the new sequences to the fasta file, and the new samples and their sequence abundance to
-# the csv file
+# You should provide a csv file with all sequences and sh1 hashes, and a csv with the previous abundance data
+# It will add the new sequences and hashes to the first file, and the new samples and their sequence abundance to
+# the second file. You can choose to overwrite or not the input files with the new output
 
-ADDING_TO_PREVIOUS="NO"
-FORMER_FASTA=""
-FORMER_CSV=""
+ADD_TO_PREVIOUS="YES"
+FORMER_HASH="/Users/Moncho/fastqs_demultiplexed_for_DADA2/demultiplexed_20180213_2333/hash_key.csv"
+FORMER_ABUNDANCE="/Users/Moncho/fastqs_demultiplexed_for_DADA2/demultiplexed_20180213_2333/ASV_table.csv"
+LOG_FILE=""
+
 
 #TODO: ADD a csv file with the taxonomical ANNOTATION of the FASTA
 

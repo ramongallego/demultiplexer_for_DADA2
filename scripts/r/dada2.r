@@ -20,14 +20,15 @@ scripts.folder <-arguments[2]
 
 hashing <-arguments[3]
 
-
+continuing <- arguments[4:7]
 
 #list.files()
 setwd (scripts.folder)
 getwd ()
 render("r/dada2.Rmd", output_file = paste0(fastq.folder,"/dada2_report.html"),
- params = list(folder=fastq.folder,
-   hash= hashing ))
+ params = list(folder = fastq.folder,
+                 hash = hashing,
+                 cont = continuing))
 
 #print (paste0("folder ",fastq.folder, " file ", arguments[2]))
 
