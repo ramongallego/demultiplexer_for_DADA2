@@ -8,6 +8,8 @@ params:
     value: x
   hash:
     value: y
+  cont:
+    value: z
 
 ---
 
@@ -23,14 +25,15 @@ You have successfully split your libraries into a pair (or two) of fastq files p
 
 First load the packages. And let's update the parameters we need
 ```{r loading packages, echo=FALSE ,message=FALSE}
-library(devtools)
-library(tidyverse)
-library(stringr)
+library (devtools)
+library (tidyverse)
+library (stringr)
 library (dada2)
 library (Biostrings)
+library (digest)
 
 #fastq.folder="/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180108_1539"
-sample.map<-read_delim(paste0(fastq.folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
+sample.map<-read_delim(paste0(params$folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
 head (sample.map)
 
 path1= paste0(params$folder,"/demultiplexed")
@@ -159,28 +162,28 @@ mergersF <- mergePairs(dadaF1s, derepF1s, dadaF2s, derepF2s, verbose=T)
 #Run a for loop that adds the number of unique reads that went into each ASV
 
 for (j in 1:length(mergersF)){
-  
+
   dadaF1s[[j]]@.Data[[2]] %>% rownames_to_column(var="forward") %>% select("forward", "nunq") ->Fwd
   Fwd$forward<-as.integer(Fwd$forward)
   dadaF2s[[j]]@.Data[[2]] %>% rownames_to_column(var="reverse") %>% select("reverse", "nunq") ->Rev
   Rev$reverse<-as.integer(Rev$reverse)
-  
+
   mergersF[[j]] <- left_join(mergersF[[j]],Fwd, by="forward") %>% left_join(Rev, by="reverse") %>% mutate(nunq=pmin(nunq.x,nunq.y)) %>% select(-nunq.x,-nunq.y)
-    
-  
+
+
 }
 
 mergersR <- mergePairs(dadaR1s, derepR1s, dadaR2s, derepR2s, verbose = T)
 
 for (j in 1:length(mergersR)){
-  
+
   dadaR1s[[j]]@.Data[[2]] %>% rownames_to_column(var="forward") %>% select("forward", "nunq") ->Fwd
   Fwd$forward<-as.integer(Fwd$forward)
   dadaR2s[[j]]@.Data[[2]] %>% rownames_to_column(var="reverse") %>% select("reverse", "nunq") ->Rev
   Rev$reverse<-as.integer(Rev$reverse)
-  
+
   mergersR[[j]] <- left_join(mergersR[[j]],Fwd, by="forward") %>% left_join(Rev, by="reverse") %>% mutate(nunq=pmin(nunq.x,nunq.y)) %>% select(-nunq.x,-nunq.y)
-    
+
 }
 
 ```
@@ -263,20 +266,79 @@ dim(seqtab.nochim)
 
 
 ```
+## IF selected, proceed with Hashing: create a hash conversion table and saving files in tidyr format
 
 We are going to keep the info in a tidyr format and save it into a csv file
 ```{r tidying and writing}
 
 seqtab.nochim.df=as.data.frame(seqtab.nochim)
+
+conv_file = paste0(params$folder,"/hash_key.csv")
+
+conv_table <- tibble( Hash = "", Sequence ="")
+  
+hashes <- list(NULL)
+
+
+if (grepl ("yes", params$hash, ignore.case = TRUE)) {
+  
+  for (i in 1:ncol(seqtab.nochim.df)) {   #for each column of the dataframe
+
+    current_seq <-colnames(seqtab.nochim.df)[i]
+
+    current_hash <- digest(current_seq,algo = "sha1",serialize = F,skip = "auto")
+
+    hashes[[i]] = current_hash
+
+    conv_table [i,]<-c(current_hash, current_seq)
+    
+    colnames(seqtab.nochim.df)[i] <- current_hash
+
+  }
+  
+  write_csv(conv_table, conv_file)
+}
+
 seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
 
-gather(seqtab.nochim.df, key=Sequence, value = nReads, -sample) %>%
-  filter(nReads > 0) %>%
-  write_csv(paste0(params$folder,"/ASV_table.csv"))
+ gather(seqtab.nochim.df, key=Sequence, value = nReads, -sample) %>%
+  filter(nReads > 0) -> current_asv 
+
+write_csv(current_asv, paste0(params$folder,"/ASV_table.csv"))
 
 ```
+## Merge with a previous analysis if selected
 
+If we have chosen to merge our dataset with a previous run, we need to gather that info, and merge properly both datasets.
+```{r merging with previous datasets}
 
+if (grepl ("yes", params$cont[1], ignore.case = TRUE)) {
+  
+old_hash = read_csv(params$cont[2])
+
+old_asv = read_csv(params$cont[3])
+
+all_hash = union_all(old_hash, conv_table)
+
+new.hashes = setdiff(conv_table,old_hash) 
+
+reads.new.hashes <- left_join(new.hashes, current_asv, by = c("Hash" = "Sequence")) 
+
+all_asv = bind_rows (old_asv, current_asv)
+  
+merging.output = tibble(Date = Sys.Date(), Old_db = params$cont[2], Old_ASV = params$cont[3], 
+                        Input_folder= params$folder, Nseq_old_db = nrow(old_hash), Nseq_new_input = nrow(conv_table),
+                        Nseq_new_db = nrow(all_hash), N_newseq = nrow(new.hashes), Nreads_newseq = sum(reads.new.hashes$nReads) )
+ifelse(file.exists(params$cont[4]),
+       write_csv(merging.output, params$cont[4], append = T),
+       write_csv(merging.output, params$cont[4]) )
+
+write_csv(all_hash, paste0(params$folder, "/Hash_db_",Sys.Date(),".csv"))
+write_csv(all_asv, paste0(params$folder, "/ASV_all_",Sys.Date(),".csv"))
+
+}
+
+```
 ##Track the fate of all reads
 ```{r output_summary}
 
