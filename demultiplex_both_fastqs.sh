@@ -52,6 +52,10 @@ OUTPUT_DIR="${OUTPUT_DIRECTORY}"/demultiplexed_"${START_TIME}"
 
 mkdir "${OUTPUT_DIR}"
 
+# Write a log file 
+LOGFILE="${OUTPUT_DIR}"/logfile.txt
+exec > >(tee "${LOGFILE}") 2>&1
+
 #if [[ -d "${OUTPUT_DIRECTORY}" ]]; then
 
 #  echo "Output files would be in ${OUTPUT_DIR}"

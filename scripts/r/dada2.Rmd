@@ -146,7 +146,7 @@ rownames(out_Rs) <- names(derepR1s) <- names(derepR2s) <- real.sample.name$Sampl
 ## And finally an inference of the sample composition
 
 ```{r dadaing, message=FALSE}
-dadaF1s <- dada(derepF1s, err = errF1, multithread = TRUE)
+dadaF1s <- dada(derepF1s, err = errF1, multithread = TRUE, verbose = T)
 dadaF2s <- dada(derepF2s, err = errF2, multithread = TRUE)
 dadaR1s <- dada(derepR1s, err = errR1, multithread = TRUE)
 dadaR2s <- dada(derepR2s, err = errR2, multithread = TRUE)
