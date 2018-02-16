@@ -220,6 +220,12 @@ PEAR_OUTPUT='/Users/threeprime/Documents/Data/IlluminaData/12S/20140930/Analysis
 ALREADY_FILTERED="NO" # [YES|NO]
 FILTERED_OUTPUT='/Users/threeprime/Documents/Data/IlluminaData/12S/20140930/Analysis_20141030_2020/2_filtered_renamed.fasta'
 
+# If using ASVs, have you already demultiplexed your reads into .1 and .2 pairs per sample.
+# Point towards the output folder so the pipeline can cp all necessary files
+ALREADY_DEMULTIPLEXED="YES"
+DEMULT_OUTPUT=""
+
+
 ################################################################################
 # CONTINUING ANALYSIS
 ################################################################################

@@ -10,6 +10,8 @@ params:
     value: y
   cont:
     value: z
+  fastqs:
+    value: a
 
 ---
 
@@ -36,8 +38,8 @@ library (digest)
 sample.map<-read_delim(paste0(params$folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
 head (sample.map)
 
-path1= paste0(params$folder,"/demultiplexed")
-#path1= "/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180108_1539"
+path1= params$fastqs
+
 ```
 
 Firstly, we'll find the patterns that separate our Fwd, Rev, .1 and .2 files. look at the quality of the .1 and .2 reads
@@ -276,12 +278,12 @@ seqtab.nochim.df=as.data.frame(seqtab.nochim)
 conv_file = paste0(params$folder,"/hash_key.csv")
 
 conv_table <- tibble( Hash = "", Sequence ="")
-  
+
 hashes <- list(NULL)
 
 
 if (grepl ("yes", params$hash, ignore.case = TRUE)) {
-  
+
   for (i in 1:ncol(seqtab.nochim.df)) {   #for each column of the dataframe
 
     current_seq <-colnames(seqtab.nochim.df)[i]
@@ -291,18 +293,18 @@ if (grepl ("yes", params$hash, ignore.case = TRUE)) {
     hashes[[i]] = current_hash
 
     conv_table [i,]<-c(current_hash, current_seq)
-    
+
     colnames(seqtab.nochim.df)[i] <- current_hash
 
   }
-  
+
   write_csv(conv_table, conv_file)
 }
 
 seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
 
  gather(seqtab.nochim.df, key=Sequence, value = nReads, -sample) %>%
-  filter(nReads > 0) -> current_asv 
+  filter(nReads > 0) -> current_asv
 
 write_csv(current_asv, paste0(params$folder,"/ASV_table.csv"))
 
@@ -313,20 +315,20 @@ If we have chosen to merge our dataset with a previous run, we need to gather th
 ```{r merging with previous datasets}
 
 if (grepl ("yes", params$cont[1], ignore.case = TRUE)) {
-  
+
 old_hash = read_csv(params$cont[2])
 
 old_asv = read_csv(params$cont[3])
 
 all_hash = union_all(old_hash, conv_table)
 
-new.hashes = setdiff(conv_table,old_hash) 
+new.hashes = setdiff(conv_table,old_hash)
 
-reads.new.hashes <- left_join(new.hashes, current_asv, by = c("Hash" = "Sequence")) 
+reads.new.hashes <- left_join(new.hashes, current_asv, by = c("Hash" = "Sequence"))
 
 all_asv = bind_rows (old_asv, current_asv)
-  
-merging.output = tibble(Date = Sys.Date(), Old_db = params$cont[2], Old_ASV = params$cont[3], 
+
+merging.output = tibble(Date = Sys.Date(), Old_db = params$cont[2], Old_ASV = params$cont[3],
                         Input_folder= params$folder, Nseq_old_db = nrow(old_hash), Nseq_new_input = nrow(conv_table),
                         Nseq_new_db = nrow(all_hash), N_newseq = nrow(new.hashes), Nreads_newseq = sum(reads.new.hashes$nReads) )
 ifelse(file.exists(params$cont[4]),
