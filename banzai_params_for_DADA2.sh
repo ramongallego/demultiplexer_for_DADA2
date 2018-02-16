@@ -222,7 +222,7 @@ FILTERED_OUTPUT='/Users/threeprime/Documents/Data/IlluminaData/12S/20140930/Anal
 
 # If using ASVs, have you already demultiplexed your reads into .1 and .2 pairs per sample.
 # Point towards the output folder so the pipeline can cp all necessary files
-ALREADY_DEMULTIPLEXED="YES"
+ALREADY_DEMULTIPLEXED="NO"
 DEMULT_OUTPUT=""
 
 
