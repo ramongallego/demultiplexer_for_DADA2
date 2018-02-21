@@ -52,6 +52,8 @@ OUTPUT_DIR="${OUTPUT_DIRECTORY}"/demultiplexed_"${START_TIME}"
 
 mkdir "${OUTPUT_DIR}"
 
+# copy metadata file to ouput directory
+cp "${SEQUENCING_METADATA}" "${OUTPUT_DIR}"/metadata.csv
 # Write a log file
 LOGFILE="${OUTPUT_DIR}"/logfile.txt
 exec > >(tee "${LOGFILE}") 2>&1
@@ -294,6 +296,8 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 
 		mkdir "${OUTPUT_DIR}"/cleaned/"${ID1S[i]}"
 
+		echo "Working on Library $[i+1] out of ${#FILE1[@]}"
+
 	##First cutdapt:
 	#TODO: use only the number of barcodes used for this Library
 
@@ -342,7 +346,8 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 
 
 
-	  echo "${short_MID_OUTPUT2}"
+	 # echo "${short_MID_OUTPUT2}"
+
 
 
 	  echo "${short_file}"
