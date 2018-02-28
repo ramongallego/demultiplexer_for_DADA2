@@ -5,10 +5,12 @@
 # INPUT
 ################################################################################
 # What is the file path to the directory containing all of the libraries/reads?
+
 PARENT_DIR="/Users/Moncho/demultiplexer_for_DADA2"/data
 
 # Where is the sequencing metadata file? (SEE FORMATTING GUIDELINES IN README!)
 SEQUENCING_METADATA="${PARENT_DIR}"/metadata.csv
+
 
 
 ################################################################################
@@ -65,7 +67,9 @@ calculate_merge_length="NO" # [ YES | NO]
 # What is the maximum expected length of the fragment of interest?
 # This is the length of the fragments input into library prep --
 # i.e. with (indexed) primers, but without library index or sequencing adapters
-LENGTH_FRAG="180"
+
+LENGTH_FRAG="385"
+
 
 # if "NO", provide the following values for PEAR:
 minimum_overlap="10" # [10]
@@ -159,6 +163,7 @@ remove_singletons="YES"  # [YES|NO]
 # DEREPLICATION
 ################################################################################
 # Should the sequence ID after dereplication be the output of a hash algorithm?
+
 USE_HASH="YES"
 
 ################################################################################
@@ -220,6 +225,7 @@ PEAR_OUTPUT='/Users/threeprime/Documents/Data/IlluminaData/12S/20140930/Analysis
 ALREADY_FILTERED="NO" # [YES|NO]
 FILTERED_OUTPUT='/Users/threeprime/Documents/Data/IlluminaData/12S/20140930/Analysis_20141030_2020/2_filtered_renamed.fasta'
 
+
 # If using ASVs, have you already demultiplexed your reads into .1 and .2 pairs per sample.
 # Point towards the output folder (must include files: sample_trans.tmp,
 # barcodes.fasta, summary.csv and pcr_primers.fasta; and the folder /demultiplexed
@@ -245,7 +251,6 @@ LOG_FILE=""
 
 
 #TODO: ADD a csv file with the taxonomical ANNOTATION of the FASTA
-
 
 
 ################################################################################
