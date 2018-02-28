@@ -5,10 +5,12 @@
 # INPUT
 ################################################################################
 # What is the file path to the directory containing all of the libraries/reads?
-PARENT_DIR="/Users/rgallego/Google_Drive/Kelly_Lab/Projects/HALO/Data/Raw_Sequence_Data/EJP_round1"
+
+PARENT_DIR="/Users/Moncho/demultiplexer_for_DADA2"/data
 
 # Where is the sequencing metadata file? (SEE FORMATTING GUIDELINES IN README!)
-SEQUENCING_METADATA="${PARENT_DIR}"/EJP_Halo_1Rep_metadata.csv
+SEQUENCING_METADATA="${PARENT_DIR}"/metadata.csv
+
 
 
 ################################################################################
@@ -65,7 +67,9 @@ calculate_merge_length="NO" # [ YES | NO]
 # What is the maximum expected length of the fragment of interest?
 # This is the length of the fragments input into library prep --
 # i.e. with (indexed) primers, but without library index or sequencing adapters
+
 LENGTH_FRAG="385"
+
 
 # if "NO", provide the following values for PEAR:
 minimum_overlap="10" # [10]
@@ -159,7 +163,8 @@ remove_singletons="YES"  # [YES|NO]
 # DEREPLICATION
 ################################################################################
 # Should the sequence ID after dereplication be the output of a hash algorithm?
-USE_HASH="NO"
+
+USE_HASH="YES"
 
 ################################################################################
 # CLUSTER OTUs
@@ -219,6 +224,30 @@ PEAR_OUTPUT='/Users/threeprime/Documents/Data/IlluminaData/12S/20140930/Analysis
 # Have the merged reads been quality filtered?
 ALREADY_FILTERED="NO" # [YES|NO]
 FILTERED_OUTPUT='/Users/threeprime/Documents/Data/IlluminaData/12S/20140930/Analysis_20141030_2020/2_filtered_renamed.fasta'
+
+
+# If using ASVs, have you already demultiplexed your reads into .1 and .2 pairs per sample.
+# Point towards the output folder so the pipeline can cp all necessary files
+ALREADY_DEMULTIPLEXED="NO"
+DEMULT_OUTPUT=""
+
+
+################################################################################
+# CONTINUING ANALYSIS
+################################################################################
+#Would you like to add this analysis to a previous set of samples already processed?
+
+# You should provide a csv file with all sequences and sh1 hashes, and a csv with the previous abundance data
+# It will add the new sequences and hashes to the first file, and the new samples and their sequence abundance to
+# the second file. You can choose to overwrite or not the input files with the new output
+
+ADD_TO_PREVIOUS="NO"
+FORMER_HASH="/Users/Moncho/fastqs_demultiplexed_for_DADA2/demultiplexed_20180213_2333/hash_key.csv"
+FORMER_ABUNDANCE="/Users/Moncho/fastqs_demultiplexed_for_DADA2/demultiplexed_20180213_2333/ASV_table.csv"
+LOG_FILE=""
+
+
+#TODO: ADD a csv file with the taxonomical ANNOTATION of the FASTA
 
 
 ################################################################################
