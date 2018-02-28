@@ -221,7 +221,10 @@ ALREADY_FILTERED="NO" # [YES|NO]
 FILTERED_OUTPUT='/Users/threeprime/Documents/Data/IlluminaData/12S/20140930/Analysis_20141030_2020/2_filtered_renamed.fasta'
 
 # If using ASVs, have you already demultiplexed your reads into .1 and .2 pairs per sample.
-# Point towards the output folder so the pipeline can cp all necessary files
+# Point towards the output folder (must include files: sample_trans.tmp,
+# barcodes.fasta, summary.csv and pcr_primers.fasta; and the folder /demultiplexed
+# so the pipeline can cp all necessary files
+
 ALREADY_DEMULTIPLEXED="NO"
 DEMULT_OUTPUT=""
 
