@@ -312,16 +312,10 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 
 
 	 for file in "${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.2.fastq; do
+# We loop through all .2 files
 
-
-		RIGHT_BARCODE=$(echo ${file} | awk '/_round1/ {
-		     match($0, /_round1/); print substr($0, RSTART - 6, 6);
-		     }')
-
-
-
-		# List all files being used:
-	  # file: .2.fastq; r1file, mid1,mid2, nof1, nof2, nor1,nor2
+ #The barcode detected on the .1 is written in the name, so we now look
+ #for that barcode at the beggining of the .2 read
 
 		RIGHT_BARCODE=$(echo ${file} | awk '/_round1/ {
 	    match($0, /_round1/); print substr($0, RSTART - 6, 6);
@@ -380,7 +374,7 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	# Now remove the pcr primers
 	# This is an important point for libraries prepared by ligation:
 	# The i7 adapters can ligate on either Fwd or Rev primer end- so you have
-	# roughly half the sequence in one direction and half on the other direction
+	# roughly half the sequences in one direction and half on the other direction
 	# What to do with them is up to you: we'll generate 4 fastqs per sample
 	#FWD.1
 	#FWD.2

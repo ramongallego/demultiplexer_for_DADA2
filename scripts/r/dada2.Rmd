@@ -209,7 +209,7 @@ table(nchar(getSequences(seqtabR)))
 ```
 
 
-Step  2 is to reverse complement the reverse reads, and checking how many of the reads in F were present in R (if you get a 0 means we have done soemthing wrong). Lastly, we change the reverse sequences and add their Reverse complement instead
+Step  2 is to reverse complement the reverse reads, and checking how many of the reads in F were present in R (if you get a 0 means we have done something wrong). Lastly, we change the reverse sequences and add their Reverse complement instead
 ```{r merging F and R (2)}
 reversed_sequences<-as.character(reverseComplement(DNAStringSet(colnames(seqtabR))))
 
@@ -274,6 +274,10 @@ We are going to keep the info in a tidyr format and save it into a csv file
 ```{r tidying and writing}
 
 seqtab.nochim.df=as.data.frame(seqtab.nochim)
+
+reversed_sequences<-as.character(reverseComplement(DNAStringSet(colnames(seqtab.nochim.df))))
+
+colnames(seqtab.nochim.df)<-reversed_sequences
 
 conv_file = paste0(params$folder,"/hash_key.csv")
 
