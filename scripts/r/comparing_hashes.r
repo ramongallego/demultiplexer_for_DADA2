@@ -13,6 +13,19 @@ Banzai_test_3=read_delim("/Users/Moncho/Google_Drive/banzai_out_20180227_1643/al
   separate(Hash, c("Hash","size"), sep = ";size=") %>%
   mutate (Hash = str_replace(Hash,pattern = ">SHA1=", ""))
 
+Banzai_test_4_after_update=read_delim("/Users/Moncho/Google_Drive/banzai_out_20180301_1327_test_updated/all_lib/derep.csv",
+  delim = ",", col_names = c("Hash", "Sequence"))  %>%
+  separate(Hash, c("Hash","size"), sep = ";size=") %>%
+  mutate (Hash = str_replace(Hash,pattern = ">SHA1=", ""))
+
+Banzai_test_Ryan=read_delim("/Users/Moncho/Downloads/derep.csv",
+                         delim = "\t", col_names = c("Hash", "Sequence"))  %>%
+  separate(Hash, c("Hash","size"), sep = ";size=") %>%
+  mutate (Hash = str_replace(Hash,pattern = ">SHA1=", ""))
+
+Array=list(Banzai_test_1,Banzai_test_2,Banzai_test_3,Banzai_test_Ryan, Banzai_test_4_after_update)
+names(Array) = c("Banzai_test_1","Banzai_test_2","Banzai_test_3","Banzai_test_Ryan", "Banzai_test_4_after_update")
+
 Demul_Tides %>% transmute (Seq1= DNAStringSet(Sequence))
 
 

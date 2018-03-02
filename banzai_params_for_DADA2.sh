@@ -6,7 +6,7 @@
 ################################################################################
 # What is the file path to the directory containing all of the libraries/reads?
 
-PARENT_DIR="/Users/Moncho/demultiplexer_for_DADA2"/data
+PARENT_DIR="${MAIN_DIR}"/data
 
 # Where is the sequencing metadata file? (SEE FORMATTING GUIDELINES IN README!)
 SEQUENCING_METADATA="${PARENT_DIR}"/metadata.csv
