@@ -27,6 +27,8 @@ Banzai_Jul_Aug=read_delim("/Users/Moncho/banzai_outputs/banzai_out_0already_pair
   separate(Hash, c("Hash","size"), sep = ";size=") %>%
   mutate (Hash = str_replace(Hash,pattern = ">SHA1=", ""))
 
+
+
 #For each dataset run with DADA2, I load the hash key and the ASV table - I'll probably should load the DUP table 
 # for the other datasets too, if I am to compare community structure as well
 
@@ -39,7 +41,7 @@ Demul_Tides_ASV %>%
   arrange(desc(size)) %>% 
   inner_join(Demul_Tides, by="Hash") -> Demul_Tides 
 
-
+Demul_Tides %>% transmute (Seq1= DNAStringSet(Sequence))
 
 Demul_EJP=read_csv("/Users/Moncho/fastqs_demultiplexed_for_DADA2/demultiplexed_20180221_1101_EJP_full/hash_key.csv")
 Demul_EJP_ASV=read_csv("/Users/Moncho/fastqs_demultiplexed_for_DADA2/demultiplexed_20180221_1101_EJP_full/ASV_table.csv")
@@ -59,9 +61,18 @@ Demul_Jul_Aug_ASV %>%
   arrange(desc(size)) %>% 
   inner_join(Demul_Jul_Aug, by="Hash") -> Demul_Jul_Aug 
 
+Demul_Jul_Aug_rc=read_csv("/Users/Moncho/fastqs_demultiplexed_for_DADA2/demultiplexed_20180228_1137/hash_key.csv")
+Demul_Jul_Aug_ASV_rc=read_csv("/Users/Moncho/fastqs_demultiplexed_for_DADA2/demultiplexed_20180228_1137/ASV_table.csv")
+
+Demul_Jul_Aug_ASV_rc %>% 
+  group_by(Hash=Sequence) %>% 
+  summarise(size =sum(nReads)) %>%
+  arrange(desc(size)) %>% 
+  inner_join(Demul_Jul_Aug_rc, by="Hash") -> Demul_Jul_Aug_rc 
+
 # Now I put all datasets to compare in a list
-Array=list(Banzai_Tides,Banzai_EJP,Banzai_Jul_Aug,Demul_Tides,Demul_EJP,Demul_Jul_Aug)
-names(Array)=c("Banzai_Tides","Banzai_EJP","Banzai_Jul_Aug","Demul_Tides","Demul_EJP","Demul_Jul_Aug")
+Array=list(Banzai_Tides,Banzai_EJP,Banzai_Jul_Aug,Demul_Tides,Demul_EJP,Demul_Jul_Aug,Demul_Jul_Aug_rc)
+names(Array)=c("Banzai_Tides","Banzai_EJP","Banzai_Jul_Aug","Demul_Tides","Demul_EJP","Demul_Jul_Aug", "Demul_Jul_Aug_rc")
 
 Output_report="/Users/Moncho/Test_dada2_joining/sharedseqs_between_runs.txt"
 
@@ -90,15 +101,28 @@ for (i in 1:length(Array)) {
   Array[[i]] %>% inner_join(Array[[j]], by ="Hash") %>% nrow() ->nmatchesHash
   
     pipeline_j=str_split(names(Array)[j], pattern="_", simplify = T)[1]
-   
-  #Add all values for this comparison into an array    
+       
   line_now= c(names(Array)[i],pipeline_i,names(Array)[j],pipeline_j,nrow(Array[[i]]),nmatches,nmatchesHash)
 
-  # Add this array to the summary table
+  
   output_object[k,]<-line_now
   
+  k=k+1
   }
   
 }
 
+Shared_seqs<-matrix(0,ncol = length(Array), nrow = length(Array), dimnames = list (names(Array), names(Array)))
+Shared_hashes<-matrix(0,ncol = length(Array), nrow = length(Array), dimnames = list (names(Array), names(Array)))
+
+Shared_seqs[with(output_object, cbind(Query_File,Matching_File)) ] <- with(output_object, nMatches)
+Shared_hashes[with(output_object, cbind(Query_File,Matching_File)) ] <- with(output_object, nMatchesHash)
+
+Shared_seqs[upper.tri(Shared_seqs)]<-0
+Shared_hashes[upper.tri(Shared_hashes)]<-0
+
 write_csv(output_object, Output_report, col_names = T)
+
+JOIN_ASV_Hood_Canal<-bind_rows(Demul_Tides_ASV,Demul_Jul_Aug_ASV)
+JOIN_Key_Hood_Canal<- Demul_Jul_Aug %>% bind_rows(Demul_Tides) %>% group_by(Sequence) %>% mutate (nReads = sum(size)) %>% mutate (Percentil = round(size/nReads,2))
+write_csv(JOIN_ASV_Hood_Canal, "~/Merged_HC.csv", col_names = T)
