@@ -5,9 +5,13 @@ for i in {0..15}; do
   echo
 
 # Number of files with pattern in a foilder
-for j in *R1_001_sub.fastq; do
-  echo "${#(*R1_001_sub.fastq)[@]}"
-done
 n_files=(*R1_001_sub.fastq)
-
-echo "${#n_files[@]}"
+i_count=0
+for j in "${n_files[@]}"; do
+  i_count=$((i_count+1))
+  echo -ne "Working on ${i_count} of ${#n_files[@]}"'\r'
+  sleep 0.5
+  #echo "${j}"
+  #echo "${#n_files[@]}"
+done
+echo
