@@ -310,10 +310,13 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	#but only looking at them on the .1 file -> do the same on the other file, and keep
 	#the order of reads similar in both files
 
+		n_files=("${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.2.fastq)
 
-	 for file in "${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.2.fastq; do
+		i_count=0
+
+	 for file in "${n_files[@]}"; do
 # We loop through all .2 files
-
+		i_count=$((i_count+1))
  #The barcode detected on the .1 is written in the name, so we now look
  #for that barcode at the beggining of the .2 read
 
@@ -338,37 +341,35 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 		NEW_OUTPUT_Rev_2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Rev.2.fastq
 			short_NEW_OUTPUT_Rev_2=$(basename "${NEW_OUTPUT_Rev_2}")
 
+		#New messages so it's easier to see the progress of the script
 
+		echo -ne "Working on sample ${i_count} of ${#n_files[@]}"'\r'
 
-	 # echo "${short_MID_OUTPUT2}"
-
-
-
-	  echo "${short_file}"
+		#echo "${short_file}"
 	  nseq_file=$(cat "${file}" | wc -l)
-	  echo "${nseq_file} reads before retrimming"
+	  #echo "${nseq_file} reads before retrimming"
 
 
-	  echo "the other half reads are (.1.)"
-	  echo "${short_r1file}"
+	  #echo "the other half reads are (.1.)"
+	  #echo "${short_r1file}"
 	  nseq_r1file=$(cat "${r1file}" |  wc -l)
-	  echo "with ${nseq_r1file} reads"
+	  #echo "with ${nseq_r1file} reads"
 
 
 	  #Now use that as an argunment for cutadapt
-	  echo "this is the right barcode"
-	  echo ${RIGHT_BARCODE}
+	  #echo "this is the right barcode"
+	  #echo ${RIGHT_BARCODE}
 
-
+# try to make cutadapt quieter
 	  cutadapt -g ^NNN"${RIGHT_BARCODE}" -o "${MID_OUTPUT2}" \
-	  -p "${MID_OUTPUT1}" "${file}" "${r1file}" --quiet --discard-untrimmed
+	  -p "${MID_OUTPUT1}" "${file}" "${r1file}" --quiet --discard-untrimmed 2>> "${LOGFILE}"
 
 	  nseq_s2r1file=$(cat "${MID_OUTPUT1}" |  wc -l)
 	  nseq_s2r2file=$(cat "${MID_OUTPUT2}" |  wc -l)
-	  echo "This is the mid R1 file"
-	  echo "${short_MID_OUTPUT1}"
-	  echo "and it has ${nseq_s2r1file} reads after trimming"
-	  echo "Hopefully the same number of lines as the mid R2 ${nseq_s2r2file}"
+	  #echo "This is the mid R1 file"
+	  #echo "${short_MID_OUTPUT1}"
+	  #echo "and it has ${nseq_s2r1file} reads after trimming"
+	  #echo "Hopefully the same number of lines as the mid R2 ${nseq_s2r2file}"
 
 
 	# Now remove the pcr primers
@@ -392,7 +393,7 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	cutadapt -g file:"${primers_file}" --discard-untrimmed\
 	 -o "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.1.fastq \
 	 -p "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
-	 "${MID_OUTPUT1}" "${MID_OUTPUT2}" --quiet
+	 "${MID_OUTPUT1}" "${MID_OUTPUT2}" --quiet 2>> "${LOGFILE}"
 
 
 
@@ -403,7 +404,7 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	-o "${NEW_OUTPUT_Fwd_2}" \
 	-p "${NEW_OUTPUT_Fwd_1}" \
 	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
-	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq --quiet
+	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq --quiet 2>> "${LOGFILE}"
 
 	#Now do similarly for those in which we found rev at the beggining of .1
 
@@ -411,7 +412,7 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	-o "${NEW_OUTPUT_Rev_2}" \
 	-p "${NEW_OUTPUT_Rev_1}" \
 	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
-	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq --quiet
+	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq --quiet 2>> "${LOGFILE}"
 
 
 	nseq_NOF1=$(cat ${NEW_OUTPUT_Fwd_1} | wc -l)
@@ -427,15 +428,21 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	  "${short_MID_OUTPUT2}" "${nseq_s2r2file}" \
 		"${short_NEW_OUTPUT_Fwd_1}" "${nseq_NOF1}" \
 	  "${short_NEW_OUTPUT_Rev_1}" "${nseq_NOR1}" >> "${OUTPUT_SUMMARY}"
-	  # now clean the middle FILES
+	  # now clean the middle FILES - checking first if they do exist
 	  rm "${file}"
 	  rm "${r1file}"
-		rm "${MID_OUTPUT1}"
-		rm "${MID_OUTPUT2}"
-		rm "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq
-		rm "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq
-		rm "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq
-		rm "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq
+		if [[ -s "${MID_OUTPUT1}" ]]; then
+			rm "${MID_OUTPUT1}"
+			rm "${MID_OUTPUT2}"
+		fi
+		if [[ -s "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq ]]; then
+			rm "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq
+			rm "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq
+		fi
+		if [[ -s "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq ]]; then
+			rm "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq
+			rm "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq
+		fi
 
 	  done
 	  rm -r "${OUTPUT_DIR}"/"${ID1S[i]}"
