@@ -461,6 +461,6 @@ else #In case you already demultiplexed your samples, then cp the files you need
 
 fi #This finishes the control flow in case you already demultiplexed
 if [[ "${SEARCH_ASVs}" = "YES" ]]; then
-	Rscript "${SCRIPT_DIR}"/r/dada2.r "${OUTPUT_DIR}" "${DEMULT_DIR}" "${SCRIPT_DIR}" "${USE_HASH}" \
+	Rscript "${SCRIPT_DIR}"/r/dada2.r "${OUTPUT_DIR}" "${DEMULT_DIR}" "${SCRIPT_DIR}" "${USE_HASH}" "${READ1}" "${READ2}"\
 	"${ADD_TO_PREVIOUS}" "${FORMER_HASH}" "${FORMER_ABUNDANCE}" "${LOG_FILE}"
 fi

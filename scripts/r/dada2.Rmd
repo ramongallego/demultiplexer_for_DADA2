@@ -12,6 +12,8 @@ params:
     value: z
   fastqs:
     value: a
+  original:
+    value: b
 
 ---
 
@@ -39,7 +41,8 @@ sample.map<-read_delim(paste0(params$folder,"/sample_trans.tmp"),col_names = c("
 head (sample.map)
 
 path1= params$fastqs
-
+Sys.setenv(READ1=params$original[1])
+Sys.setenv(READ2=params$original[2])
 ```
 
 Firstly, we'll find the patterns that separate our Fwd, Rev, .1 and .2 files. look at the quality of the .1 and .2 reads
@@ -111,11 +114,11 @@ out_Rs_tibble<-tibble(file=dimnames(out_Rs)[[1]], reads.out=out_Rs[,2])
 
 Now the first crucial step: learning the error rates that would be different for fwd and rev reads
 
-```{r learning errors, echo=F}
-errF1 <- learnErrors(filtF1s, multithread=TRUE)
-errF2 <- learnErrors(filtF2s, multithread=TRUE)
-errR1 <- learnErrors(filtR1s, multithread=TRUE)
-errR2 <- learnErrors(filtR2s, multithread=TRUE)
+```{r learning errors, echo=T}
+errF1 <- learnErrors(filtF1s, multithread=TRUE,verbose = 0)
+errF2 <- learnErrors(filtF2s, multithread=TRUE,verbose = 0)
+errR1 <- learnErrors(filtR1s, multithread=TRUE,verbose = 0)
+errR2 <- learnErrors(filtR2s, multithread=TRUE,verbose = 0)
 
 ```
 
@@ -148,7 +151,7 @@ rownames(out_Rs) <- names(derepR1s) <- names(derepR2s) <- real.sample.name$Sampl
 ## And finally an inference of the sample composition
 
 ```{r dadaing, message=FALSE}
-dadaF1s <- dada(derepF1s, err = errF1, multithread = TRUE, verbose = T)
+dadaF1s <- dada(derepF1s, err = errF1, multithread = TRUE)
 dadaF2s <- dada(derepF2s, err = errF2, multithread = TRUE)
 dadaR1s <- dada(derepR1s, err = errR1, multithread = TRUE)
 dadaR2s <- dada(derepR2s, err = errR2, multithread = TRUE)
@@ -159,7 +162,7 @@ dadaR2s <- dada(derepR2s, err = errR2, multithread = TRUE)
 
 ```{r merging pairs}
 
-mergersF <- mergePairs(dadaF1s, derepF1s, dadaF2s, derepF2s, verbose=T)
+mergersF <- mergePairs(dadaF1s, derepF1s, dadaF2s, derepF2s,verbose = 0)
 
 #Run a for loop that adds the number of unique reads that went into each ASV
 
@@ -175,7 +178,7 @@ for (j in 1:length(mergersF)){
 
 }
 
-mergersR <- mergePairs(dadaR1s, derepR1s, dadaR2s, derepR2s, verbose = T)
+mergersR <- mergePairs(dadaR1s, derepR1s, dadaR2s, derepR2s, verbose = 0)
 
 for (j in 1:length(mergersR)){
 
@@ -262,12 +265,73 @@ final.seqtab <- as.matrix (cbind(final.seqtab,seqtab.R.df))
 
 ```{r RemovingChimeras, message=F}
 
-seqtab.nochim <- removeBimeraDenovo(final.seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+seqtab.nochim <- removeBimeraDenovo(final.seqtab, method="consensus", multithread=TRUE)
 
 dim(seqtab.nochim)  
 
 
 ```
+## Now is a good time to check whether the sequences are in the Fwd or Reverse-ReverseComplement direction, we'll use 500 sequences to make up our test
+
+
+```{r, write colnames}
+ifelse(length(colnames(seqtab.nochim))>500, to_write<- sample(colnames(seqtab.nochim),size = 500, replace = F), to_write<-colnames(seqtab.nochim))
+#to_write<- sample(colnames(seqtab.nochim),size = 500, replace = F)
+write_lines(to_write, path = "seqnames.txt")
+```
+
+```{bash}
+
+#This looks for the sequences of interest in the .1 .2 fastqs, returns only the nt before the match (ie, the primer)
+
+F1_found=matchesF.txt
+F2_found=matchesR.txt
+
+cat seqnames.txt | cut -c 1-120 | xargs -i sed -n 's/{}.*$//p' "${READ1}" > "${F1_found}"
+
+cat seqnames.txt | cut -c 1-120 | xargs -i sed -n 's/{}.*$//p' "${READ2}" > "${F2_found}"
+
+#This looks in those files for the Fwd and Rev PCR primers - we only should get the fwd primer
+
+COIF=$(head -2 pcr_primers.fasta | tail -1 | sed 's/[^ACGT]/\[A-Z]/g')
+COIR=$(head -4 pcr_primers.fasta | tail -1 | sed 's/[^ACGT]/\[A-Z]/g')
+
+echo "${COIF}"
+
+matchesF1=$(grep "${COIF}" "${F1_found}" --count)
+matchesRRC1=$(grep "${COIR}" "${F1_found}" --count)
+matchesF2=$(grep "${COIF}" "${F2_found}" --count)
+matchesRRC2=$(grep "${COIR}" "${F2_found}" --count)
+
+echo "${matchesF1}" "${matchesRRC1}" "${matchesF2}" "${matchesRRC2}"
+
+printf "Fwd_Primer\tfile.1\t%s\nRev_Primer\tfile.1\t%s\nFwd_Primer\tfile.2\t%s\nRev_Primer\tfile.2\t%s\n" \
+ "${matchesF1}" "${matchesRRC1}" "${matchesF2}" "${matchesRRC2}" >matches.txt
+```
+
+#Now hoping these objects are available for R to import
+
+```{r shall we rc}
+
+results_search=read_delim("matches.txt", delim = "\t", col_names = c("Primer","File", "nMatches"))
+results_search
+results_search %>% group_by(Primer) %>% summarise(Total=sum(nMatches)) %>% pull (Total)-> results_spread
+names(results_spread) <- results_search %>% group_by(Primer) %>% summarise(Total=sum(nMatches)) %>% pull (1)
+
+results_spread
+direction=NULL
+
+# So here is my solution: If all or 99% of the reads are Fwd - then we assume they are all Fwd and no RC is needed
+# If all or 99% of the reads are Reverse Complemented - then I assumy they are all RC and we'll proceed with revcom
+# IF there is more than 1% difference then we'll call it mixed and throw a warning message and don't do anything
+
+ifelse(results_spread["Rev_Primer"]==0 | (results_spread["Fwd_Primer"] / results_spread["Rev_Primer"])>100, yes = direction<-"Fwd",
+     ifelse(results_spread["Fwd_Primer"]==0 | (results_spread["Rev_Primer"] / results_spread["Fwd_Primer"])>100, yes = direction<-"Rev", no = direction<-"MIXED"))
+direction
+
+```
+
+
 ## IF selected, proceed with Hashing: create a hash conversion table and saving files in tidyr format
 
 We are going to keep the info in a tidyr format and save it into a csv file
@@ -275,18 +339,36 @@ We are going to keep the info in a tidyr format and save it into a csv file
 
 seqtab.nochim.df=as.data.frame(seqtab.nochim)
 
-reversed_sequences<-as.character(reverseComplement(DNAStringSet(colnames(seqtab.nochim.df))))
+if (direction == "MIXED") {
+  
+  print(" Seems like some of your reads are in the Fwd direction but others are Reverse Complemented - You should look into that")
+}
+
+if (direction == "Rev") {
+  
+  print(" Seems like your reads are in the Reverse Complemented direction - I'm going to fix that for you ")
+  
+  reversed_sequences<-as.character(reverseComplement(DNAStringSet(colnames(seqtab.nochim.df))))
 
 colnames(seqtab.nochim.df)<-reversed_sequences
+  
+}
 
-conv_file = paste0(params$folder,"/hash_key.csv")
+if (direction == "Fwd") {
+  
+  print ("All your reads are in the Fwd direction - Congratulations")
+}
 
-conv_table <- tibble( Hash = "", Sequence ="")
 
-hashes <- list(NULL)
-
+# Now decide if you want hashing or not
 
 if (grepl ("yes", params$hash, ignore.case = TRUE)) {
+
+  conv_file = paste0(params$folder,"/hash_key.csv")
+
+  conv_table <- tibble( Hash = "", Sequence ="")
+
+  hashes <- list(NULL)
 
   for (i in 1:ncol(seqtab.nochim.df)) {   #for each column of the dataframe
 
@@ -303,14 +385,23 @@ if (grepl ("yes", params$hash, ignore.case = TRUE)) {
   }
 
   write_csv(conv_table, conv_file)
-}
+
 
 seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
 
- gather(seqtab.nochim.df, key=Sequence, value = nReads, -sample) %>%
+ gather(seqtab.nochim.df, key=Hash, value = nReads, -sample) %>% 
   filter(nReads > 0) -> current_asv
 
 write_csv(current_asv, paste0(params$folder,"/ASV_table.csv"))
+} else { #What do we do if you don't want hashes: two things - Change the header of the ASV table, write only one file
+  
+  seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
+
+  gather(seqtab.nochim.df, key=Sequence, value = nReads, -sample) %>% 
+   filter(nReads > 0) -> current_asv
+  write_csv(current_asv, paste0(params$folder,"/ASV_table.csv"))
+}
+
 
 ```
 ## Merge with a previous analysis if selected
