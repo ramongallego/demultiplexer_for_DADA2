@@ -41,10 +41,10 @@ sample.map<-read_delim(paste0(params$folder,"/sample_trans.tmp"),col_names = c("
 head (sample.map)
 
 path1= params$fastqs
+params$original[1]
 Sys.setenv(READ1=params$original[1])
 Sys.setenv(READ2=params$original[2])
 ```
-
 Firstly, we'll find the patterns that separate our Fwd, Rev, .1 and .2 files. look at the quality of the .1 and .2 reads
 ```{r listing files}
 
@@ -244,9 +244,7 @@ for (i in 1:ncol(seqtabF)) {   #for each column of the first dataframe
     seqtab.R.df[,current_seq]<-NULL
     #seqtab.R2.df<- seqtab.R2.df[,-current_seq] #we delete the column from the second df to speed up next search
 
-    print (ncol (seqtab.R.df)) #check that is true
-
-
+  
   } else {        # if the column is not present, then the new df is the value of the first df
 
     final.seqtab[,current_seq] <- seqtabF[,i]
@@ -271,7 +269,7 @@ dim(seqtab.nochim)
 
 
 ```
-## Now is a good time to check whether the sequences are in the Fwd or Reverse-ReverseComplement direction, we'll use 500 sequences to make up our test
+## Now it is a good time to check whether the sequences are in the Fwd or Reverse-ReverseComplement direction, we'll use 500 sequences to make up our test
 
 
 ```{r, write colnames}

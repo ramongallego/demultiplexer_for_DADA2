@@ -460,7 +460,20 @@ else #In case you already demultiplexed your samples, then cp the files you need
 	DEMULT_DIR="${DEMULT_OUTPUT}"/demultiplexed
 
 fi #This finishes the control flow in case you already demultiplexed
+# We are selecting a pair of fastq files so we can check the direction of the
+# ASVs
+FILE1=($(awk -F',' -v COLNUM=$COLNUM_FILE1 \
+	'NR>1 {  print $COLNUM }' $SEQUENCING_METADATA |\
+	sort | uniq))
+
+FILE2=($(awk -F',' -v COLNUM=$COLNUM_FILE2 \
+	'NR>1 {print $COLNUM}' $SEQUENCING_METADATA |\
+	sort | uniq ))
+READ1="${PARENT_DIR}/${FILE1[1]}"
+READ2="${PARENT_DIR}/${FILE2[1]}"
+
 if [[ "${SEARCH_ASVs}" = "YES" ]]; then
+	echo "This is read1 ${READ1}"
 	Rscript "${SCRIPT_DIR}"/r/dada2.r "${OUTPUT_DIR}" "${DEMULT_DIR}" "${SCRIPT_DIR}" "${USE_HASH}" "${READ1}" "${READ2}"\
 	"${ADD_TO_PREVIOUS}" "${FORMER_HASH}" "${FORMER_ABUNDANCE}" "${LOG_FILE}"
 fi
