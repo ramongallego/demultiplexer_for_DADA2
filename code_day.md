@@ -40,8 +40,31 @@ In return, this pipeline will give you the composition of your samples. The **ou
 - ASV_Table: It is in a long format, with three columns: Hash, sample, nReads
 
 
+```
+# A tibble: 5 x 3
+  sample  Hash                                     nReads
+  <chr>   <chr>                                     <int>
+1 LL08B.3 a66d2cafe17c8203af1b9a46ae27ba84707bcd20      8
+2 LL08C.2 9c6622bc6a7f13f9592c93c84d5576b438579098      5
+3 SA08A.2 ad2a209d5762efa8de63ad8ba6b53b4a337341de      2
+4 LL08C.1 ad2a209d5762efa8de63ad8ba6b53b4a337341de      3
+5 LL08B.3 c84c078afb75141b53650e01b2f1cf1e1cb8c3bc      5
+```
+
+- Hash_key: In case you used hashing, the key to convert sequences to hashes
+
+
+```
+# A tibble: 4 x 2
+  Hash                                     Sequence                       
+  <chr>                                    <chr>                          
+1 a66d2cafe17c8203af1b9a46ae27ba84707bcd20 AGAACTTGGTAATCCTTGATATTGTGGTAG…
+2 9c6622bc6a7f13f9592c93c84d5576b438579098 AAAAGGTAATAGTATGGTGTTAGTGGCTAT…
+3 ad2a209d5762efa8de63ad8ba6b53b4a337341de AAAAAGGTAATAGTATGGTGTTAGTGGCTA…
+4 c84c078afb75141b53650e01b2f1cf1e1cb8c3bc ACTGTTTATCCTCCAGAACTTGGTAATCCT…
+```
 
 Slide With Plot
 ========================================================
 
-![plot of chunk unnamed-chunk-3](code_day-figure/unnamed-chunk-3-1.png)
+![plot of chunk unnamed-chunk-4](code_day-figure/unnamed-chunk-4-1.png)

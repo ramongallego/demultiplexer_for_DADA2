@@ -28,6 +28,18 @@ In return, this pipeline will give you the composition of your samples. The **ou
 - ASV_Table: It is in a long format, with three columns: Hash, sample, nReads
 
 ```{r, echo=FALSE}
+ASV.table <- read_csv("output_training/ASV_table.csv")
+
+ASV.table
+```
+
+- Hash_key: In case you used hashing, the key to convert sequences to hashes
+
+```{r, echo=F}
+
+Hash.key <- read_csv("output_training/hash_key.csv")
+
+Hash.key
 
 ```
 
