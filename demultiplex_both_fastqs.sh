@@ -51,7 +51,7 @@ START_TIME=$(date +%Y%m%d_%H%M)
 OUTPUT_DIR="${OUTPUT_DIRECTORY}"/demultiplexed_"${START_TIME}"
 
 mkdir "${OUTPUT_DIR}"
-
+echo "Output directory is ${OUTPUT_DIR}"
 # copy metadata file to ouput directory
 cp "${SEQUENCING_METADATA}" "${OUTPUT_DIR}"/metadata.csv
 # Write a log file

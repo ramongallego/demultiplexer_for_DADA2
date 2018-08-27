@@ -1,0 +1,39 @@
+code_day
+========================================================
+author: Ramón Gallego
+date: 20180827
+autosize: true
+
+What does this pipeline do?
+========================================================
+
+Once you have retrieved all your sequences from the Illumina machine, you will need to asign them to the sample they came from,  and minimize the noise and cross-contamination inherent to this platform.
+
+This pipeline will need the follwing **input** files:
+
+- One or more pairs of fastq files
+- A metadata file, with one row per sample, containing the information needed to demultiplex the sequences
+```{r, echo=FALSE}
+library(tidyverse)
+metadata <- read_csv("data/metadata.csv")
+metadata %>% select (sample_id, Tag, pri_index_name, sec_index_seq, file1, file2)
+```
+- A parameters file, which will be the bridge between the pipeline and the metadata file 
+
+What does this pipeline give you?
+========================================================
+
+In return, this pipeline will give you the composition of your samples. The **output** files are:
+
+- ASV_Table: It is in a long format, with three columns: Hash, sample, nReads
+
+```{r, echo=FALSE}
+
+```
+
+Slide With Plot
+========================================================
+
+```{r, echo=FALSE}
+plot(cars)
+```

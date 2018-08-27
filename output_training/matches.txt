@@ -1,0 +1,4 @@
+Fwd_Primer	file.1	0
+Rev_Primer	file.1	0
+Fwd_Primer	file.2	0
+Rev_Primer	file.2	0
