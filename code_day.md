@@ -41,30 +41,121 @@ In return, this pipeline will give you the composition of your samples. The **ou
 
 
 ```
-# A tibble: 5 x 3
-  sample  Hash                                     nReads
-  <chr>   <chr>                                     <int>
-1 LL08B.3 a66d2cafe17c8203af1b9a46ae27ba84707bcd20      8
-2 LL08C.2 9c6622bc6a7f13f9592c93c84d5576b438579098      5
-3 SA08A.2 ad2a209d5762efa8de63ad8ba6b53b4a337341de      2
-4 LL08C.1 ad2a209d5762efa8de63ad8ba6b53b4a337341de      3
-5 LL08B.3 c84c078afb75141b53650e01b2f1cf1e1cb8c3bc      5
+# A tibble: 776 x 3
+   sample  Hash                                     nReads
+   <chr>   <chr>                                     <int>
+ 1 LL07B.1 c77678ba55303523ebfb97073b6920fb80c7b9db    132
+ 2 TR07B.1 c77678ba55303523ebfb97073b6920fb80c7b9db     96
+ 3 PO07C.3 c77678ba55303523ebfb97073b6920fb80c7b9db     77
+ 4 LL07C.2 c77678ba55303523ebfb97073b6920fb80c7b9db     79
+ 5 TW07C.2 c77678ba55303523ebfb97073b6920fb80c7b9db    195
+ 6 PO07A.1 c77678ba55303523ebfb97073b6920fb80c7b9db     99
+ 7 TR07A.2 c77678ba55303523ebfb97073b6920fb80c7b9db    125
+ 8 TW08B.2 c77678ba55303523ebfb97073b6920fb80c7b9db      5
+ 9 LL07A.2 c77678ba55303523ebfb97073b6920fb80c7b9db     89
+10 PO07A.2 c77678ba55303523ebfb97073b6920fb80c7b9db     40
+# ... with 766 more rows
 ```
 
 - Hash_key: In case you used hashing, the key to convert sequences to hashes
 
 
 ```
-# A tibble: 4 x 2
-  Hash                                     Sequence                       
-  <chr>                                    <chr>                          
-1 a66d2cafe17c8203af1b9a46ae27ba84707bcd20 AGAACTTGGTAATCCTTGATATTGTGGTAG…
-2 9c6622bc6a7f13f9592c93c84d5576b438579098 AAAAGGTAATAGTATGGTGTTAGTGGCTAT…
-3 ad2a209d5762efa8de63ad8ba6b53b4a337341de AAAAAGGTAATAGTATGGTGTTAGTGGCTA…
-4 c84c078afb75141b53650e01b2f1cf1e1cb8c3bc ACTGTTTATCCTCCAGAACTTGGTAATCCT…
+# A tibble: 119 x 2
+   Hash                                     Sequence                      
+   <chr>                                    <chr>                         
+ 1 c77678ba55303523ebfb97073b6920fb80c7b9db TTTAAGTGGAATCCTAGCACATTCTGGAG…
+ 2 8a1c9da427aa6f155aaa44acd2708f79db93e1d1 TCTAGCAGGGATTCAAGCTCATTCAGGAG…
+ 3 a64ab751b69ad1c2dc45814951dd0b3fce5c88aa ACTAAGTCATATTACTAGTCACTCAGGAG…
+ 4 11a112ced1c85e620f6d97d82281a1bb58614e67 TCTAAGTCATATTACGAGCCACTCTGGTG…
+ 5 9c1b08211a76599faa4a6763b8c564f85d586b36 ACTTTCAAGTGGTACGTCTCACTCTGGTG…
+ 6 bccac54ad7babc9191848eab06023ee35501cc72 ACTCTCTTCCAAGAAATACTCTTCCAGCT…
+ 7 a31d4e16bf8a39f654272a1186dba2dda26ab921 ATTATCAAGTATTGCAAGCCACTCTGGAG…
+ 8 bc6b1aeae602820e9af67763214c3b38c6d34f7c TCTTTCAAGTGGAACTTCTCATTCAGGTG…
+ 9 5ea3e5f9f5b217b39bc303871d907b6536ed24fa ATTAGCAAGTATTGCATTCCACTCAGGAG…
+10 422d4fe71439b6a3fcf11eb88b4b6470aeccf522 TCTTTCAGGTATTATTGCACACTCAGGAG…
+# ... with 109 more rows
 ```
+- A bunch of summary files and general clutter
 
-Slide With Plot
+Getting started
 ========================================================
 
-![plot of chunk unnamed-chunk-4](code_day-figure/unnamed-chunk-4-1.png)
+
+
+
+
+- Download the last version of the pipeline. If you use git or github, open the terminal and type 
+
+`git clone https://github.com/ramongallego/demultiplexer_for_DADA2.git <directory>`
+
+If not, you can just browse to  https://github.com/ramongallego/demultiplexer_for_DADA2 and use the ZIP download option
+
+- Before we started using dada2 for clustering sequences, we used jimmy O'donnell's pipeline. You can get it at
+
+`git clone https://github.com/jimmyodonnell/banzai.git <directory2>`
+
+
+
+Dependencies
+========================================================
+
+Here is a list of dependencies you should have for running both pipelines
+
+- cutadapt
+
+- vsearch 
+
+- swarm
+
+- seqtk
+
+- blast+
+
+- python
+
+- pandoc
+
+- and a lot of **R** packages:
+  
+    - data.table
+    - devtools
+    - reshape2
+    - vegan
+    - taxize
+    - tidyverse
+    - stringr
+    - dada2
+    - Biostrings
+    - digest
+    - rmarkdown
+    - knitr
+
+Doing a test Run: demultiplexer_for_dada2
+========================================================
+
+Just to check that you have installed everything you need, let's do a test run
+
+`bash <path_to_demultiplexer_for_dada2>/demultiplex_both_fastqs.sh <path_to_demultiplexer_for_dada2>/banzai_params_for_dada2.sh`
+
+The test run takes about two minutes to run, and you should see it progress like this
+
+
+```r
+knitr::include_graphics("code_day-figure/Screen Shot 2018-08-27 at 5.21.22 PM.png")
+```
+
+<img src="code_day-figure/Screen Shot 2018-08-27 at 5.21.22 PM.png" title="plot of chunk unnamed-chunk-4" alt="plot of chunk unnamed-chunk-4" width="55%" style="display: block; margin: auto;" />
+
+
+Doing a test Run: banzai
+======================================
+
+
+Similar concept, just try 
+
+`bash <path/to/dir>/banzai.sh test`
+
+If you succeed, you should see 
+
+

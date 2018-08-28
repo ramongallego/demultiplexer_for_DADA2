@@ -42,10 +42,85 @@ Hash.key <- read_csv("output_training/hash_key.csv")
 Hash.key
 
 ```
+- A bunch of summary files and general clutter
 
-Slide With Plot
+Getting started
 ========================================================
 
-```{r, echo=FALSE}
-plot(cars)
+
+
+
+
+- Download the last version of the pipeline. If you use git or github, open the terminal and type 
+
+`git clone https://github.com/ramongallego/demultiplexer_for_DADA2.git <directory>`
+
+If not, you can just browse to  https://github.com/ramongallego/demultiplexer_for_DADA2 and use the ZIP download option
+
+- Before we started using dada2 for clustering sequences, we used jimmy O'donnell's pipeline. You can get it at
+
+`git clone https://github.com/jimmyodonnell/banzai.git <directory2>`
+
+
+
+Dependencies
+========================================================
+
+Here is a list of dependencies you should have for running both pipelines
+
+- cutadapt
+
+- vsearch 
+
+- swarm
+
+- seqtk
+
+- blast+
+
+- python
+
+- pandoc
+
+- and a lot of **R** packages:
+  
+    - data.table
+    - devtools
+    - reshape2
+    - vegan
+    - taxize
+    - tidyverse
+    - stringr
+    - dada2
+    - Biostrings
+    - digest
+    - rmarkdown
+    - knitr
+
+Doing a test Run: demultiplexer_for_dada2
+========================================================
+
+Just to check that you have installed everything you need, let's do a test run
+
+`bash <path_to_demultiplexer_for_dada2>/demultiplex_both_fastqs.sh <path_to_demultiplexer_for_dada2>/banzai_params_for_dada2.sh`
+
+The test run takes about two minutes to run, and you should see it progress like this
+
+```{r, out.width = '55%', fig.align = 'center'}
+
+knitr::include_graphics("code_day-figure/Screen Shot 2018-08-27 at 5.21.22 PM.png")
+
 ```
+
+
+Doing a test Run: banzai
+======================================
+
+
+Similar concept, just try 
+
+`bash <path/to/dir>/banzai.sh test`
+
+If you succeed, you should see 
+
+
