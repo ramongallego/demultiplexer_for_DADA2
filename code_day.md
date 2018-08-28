@@ -131,12 +131,23 @@ Here is a list of dependencies you should have for running both pipelines
     - rmarkdown
     - knitr
 
+The parameters file
+========================================================
+
+The parameters file tells the script where to look for the appropiate information in the metadata file, and allows you to choose amongst different options for your run.
+
+We will go through them later on, but for now we will have to focus on one:
+
+<img src="code_day-figure/Screen Shot 2018-08-28 at 8.08.55 AM.png" title="plot of chunk unnamed-chunk-4" alt="plot of chunk unnamed-chunk-4" width="80%" style="display: block; margin: auto;" />
+
+This directory must exist in your drive, so if you haven't created one, do it now.
+
 Doing a test Run: demultiplexer_for_dada2
 ========================================================
 
 Just to check that you have installed everything you need, let's do a test run
 
-`bash <path_to_demultiplexer_for_dada2>/demultiplex_both_fastqs.sh <path_to_demultiplexer_for_dada2>/banzai_params_for_dada2.sh`
+`bash <ppath/to/dir>/demultiplex_both_fastqs.sh <path/to/dir>/banzai_params_for_dada2.sh`
 
 The test run takes about two minutes to run, and you should see it progress like this
 
@@ -145,7 +156,7 @@ The test run takes about two minutes to run, and you should see it progress like
 knitr::include_graphics("code_day-figure/Screen Shot 2018-08-27 at 5.21.22 PM.png")
 ```
 
-<img src="code_day-figure/Screen Shot 2018-08-27 at 5.21.22 PM.png" title="plot of chunk unnamed-chunk-4" alt="plot of chunk unnamed-chunk-4" width="55%" style="display: block; margin: auto;" />
+<img src="code_day-figure/Screen Shot 2018-08-27 at 5.21.22 PM.png" title="plot of chunk unnamed-chunk-5" alt="plot of chunk unnamed-chunk-5" width="55%" style="display: block; margin: auto;" />
 
 
 Doing a test Run: banzai
@@ -158,4 +169,12 @@ Similar concept, just try
 
 If you succeed, you should see 
 
+<img src="code_day-figure/Screen Shot 2018-08-27 at 6.25.04 PM.png" title="plot of chunk unnamed-chunk-6" alt="plot of chunk unnamed-chunk-6" width="55%" style="display: block; margin: auto;" />
 
+
+The pipeline script
+====================
+
+- The first part looks for the parameters file, the metadata file and creates all the directory it needs to get started
+
+- Then, under the READ METADATA section, it loads all the info from the metadata file 
