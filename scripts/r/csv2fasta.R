@@ -1,20 +1,9 @@
-input <- readLines("/Users/rgallego/fastqs_demultiplexed_for_DADA2/banzai_out_20180207_1704/all_lib/derep.fasta")
-output <- file("/Users/rgallego/fastqs_demultiplexed_for_DADA2/banzai_out_20180207_1704/all_lib/derep.csv","w")
+library(tidyverse)
+library(seqinr)
 
-currentSeq <- 0
-newLine <- 0
+input <- read_csv("/Users/ramongallego/GoogleDrive/Kelly_Lab/Projects/OA_eDNA/Data/Growing_database/Hash_Key_2018-09-13.csv")
+output <- "/Users/ramongallego/GoogleDrive/Kelly_Lab/Projects/OA_eDNA/Data/Growing_database/Hash_Key_2018-09-13.fasta"
 
-for(i in 1:length(input)) {
-  if(strtrim(input[i], 1) == ">") {
-    if(currentSeq == 0) {
-      writeLines(paste(input[i],"\t"), output, sep="")
-      currentSeq <- currentSeq + 1
-    } else {
-      writeLines(paste("\n",input[i],"\t", sep =""), output, sep="")
-    }
-  } else {
-    writeLines(paste(input[i]), output, sep="")
-  }
-}
-
-close(output)
+write.fasta (sequences = as.list(input$Sequence),
+             names = as.list(input$Hash),
+             file.out = output)

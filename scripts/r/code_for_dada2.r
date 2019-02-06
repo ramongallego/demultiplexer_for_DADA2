@@ -1,8 +1,8 @@
 params <-
-structure(list(folder = "/Users/Moncho/fastqs_demultiplexed_for_DADA2/demultiplexed_20180214_1459",
+structure(list(folder = "/Users/ramongallego/GoogleDrive/Raw_data/SJI_COI_Skagit_16S/Final_16S/",
                hash = "YES",
                cont = c("No",""),
-               fastqs = "/Users/Moncho/fastqs_demultiplexed_for_DADA2/demultiplexed_20180214_1459/demultiplexed"),
+               fastqs = "/Users/ramongallego/GoogleDrive/Raw_data/SJI_COI_Skagit_16S/Final_16S/"),
           .Names = c("folder", "hash", "cont", "fastqs"))
 
 ## ----setup, include=FALSE------------------------------------------------
@@ -27,49 +27,36 @@ path1= params$fastqs
 
 ## ----listing files-------------------------------------------------------
 
-F1s <- sort(list.files(path1, pattern="_Fwd.1.fastq", full.names = TRUE))
-F2s <- sort(list.files(path1, pattern="_Fwd.2.fastq", full.names = TRUE))
-R1s <- sort(list.files(path1, pattern="_Rev.1.fastq", full.names = TRUE))
-R2s <- sort(list.files(path1, pattern="_Rev.2.fastq", full.names = TRUE))
+F1s <- sort(list.files(path1, pattern="_F.1.fastq", full.names = TRUE))
+F2s <- sort(list.files(path1, pattern="_F.2.fastq", full.names = TRUE))
+R1s <- sort(list.files(path1, pattern="_R.1.fastq", full.names = TRUE))
+R2s <- sort(list.files(path1, pattern="_R.2.fastq", full.names = TRUE))
 
 # Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
-sample.names <- str_replace(basename(F1s), "_Fwd.1.fastq","")
+sample.names <- str_replace(basename(F1s), "_F.1.fastq","")
 
 #Now use only those that reflect a real sample
 
-good.sample.names<-sample.names[sample.names %in% sample.map$fastq_header]
-# Introduce here the biological counterpart of the fastq file
-
-real.sample.name <- sample.map[,3][match(good.sample.names,sample.map$fastq_header),1]
-
-# Now subset the number of files to be looked at
-
-F1sgood<-F1s[sample.names %in% sample.map$fastq_header]
-F2sgood<-F2s[sample.names %in% sample.map$fastq_header]
-R1sgood<-R1s[sample.names %in% sample.map$fastq_header]
-R2sgood<-R2s[sample.names %in% sample.map$fastq_header]
-
-
 ## ----qplot1, echo=FALSE--------------------------------------------------
-plotQualityProfile(F1sgood[1:4])
+plotQualityProfile(F1s[1:4])
 
 ## ----plot2, echo=FALSE---------------------------------------------------
-plotQualityProfile(R1sgood[1:4])
+plotQualityProfile(R1s[1:4])
 
 ## ----qplot3, echo=FALSE--------------------------------------------------
-plotQualityProfile(F2sgood[1:4])
+plotQualityProfile(F2s[1:4])
 
 ## ----filter and trim-----------------------------------------------------
 filt_path <- file.path(params$folder, "/filtered") # Place filtered files in filtered/ subdirectory
-filtF1s <- file.path(filt_path, paste0(good.sample.names, "_F1_filt.fastq.gz"))
-filtF2s <- file.path(filt_path, paste0(good.sample.names, "_F2_filt.fastq.gz"))
-out_Fs <- filterAndTrim(F1sgood, filtF1s, F2sgood, filtF2s, truncLen=c(210,210),
+filtF1s <- file.path(filt_path, paste0(sample.names, "_F1_filt.fastq.gz"))
+filtF2s <- file.path(filt_path, paste0(sample.names, "_F2_filt.fastq.gz"))
+out_Fs <- filterAndTrim(F1s, filtF1s, F2s, filtF2s, truncLen=c(210,210),
                       maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
 
-filtR1s <- file.path(filt_path, paste0(good.sample.names, "_R1_filt.fastq.gz"))
-filtR2s <- file.path(filt_path, paste0(good.sample.names, "_R2_filt.fastq.gz"))
-out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(210,210),
+filtR1s <- file.path(filt_path, paste0(sample.names, "_R1_filt.fastq.gz"))
+filtR2s <- file.path(filt_path, paste0(sample.names, "_R2_filt.fastq.gz"))
+out_Rs <- filterAndTrim(R1s, filtR1s, R2s, filtR2s, truncLen=c(210,210),
                       maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE)
 
@@ -101,9 +88,9 @@ derepR1s <- derepFastq(filtR1s, verbose=TRUE)
 derepR2s <- derepFastq(filtR2s, verbose=TRUE)
 
 # Name the derep-class objects by the sample names
-rownames(out_Fs) <- names(derepF1s) <- names(derepF2s) <- real.sample.name$Sample
+rownames(out_Fs) <- names(derepF1s) <- names(derepF2s) <- str_replace(basename(F1s), "_F.1.fastq","")
 
-rownames(out_Rs) <- names(derepR1s) <- names(derepR2s) <- real.sample.name$Sample
+rownames(out_Rs) <- names(derepR1s) <- names(derepR2s) <- str_replace(basename(F1s), "_F.1.fastq","")
 
 
 ## ----dadaing, message=FALSE----------------------------------------------
@@ -211,39 +198,52 @@ dim(seqtab.nochim)
 
 
 
-## ----tidying and writing-------------------------------------------------
+## ----r, write colnames-------------------------------------------------
+
+ifelse(length(colnames(seqtab.nochim))>500, to_write<- sample(colnames(seqtab.nochim),size = 500, replace = F), to_write<-colnames(seqtab.nochim))
+#to_write<- sample(colnames(seqtab.nochim),size = 500, replace = F)
+write_lines(to_write, path = "seqnames.txt")
+getwd()
+
+
+## ----r tidying and writing--------------
 
 seqtab.nochim.df=as.data.frame(seqtab.nochim)
 
-reversed_sequences<-as.character(reverseComplement(DNAStringSet(colnames(seqtab.nochim.df))))
-
-colnames(seqtab.nochim.df)<-reversed_sequences
-
-conv_file = paste0(params$folder,"/hash_key.csv")
-
-conv_table <- tibble( Hash = character(), Sequence = character())
-
-hashes <- list(NULL)
-
+# Now decide if you want hashing or not
 
 if (grepl ("yes", params$hash, ignore.case = TRUE)) {
-
+  
+  conv_file = paste0(params$folder,"/hash_key.csv")
+  
+  conv_table <- tibble( Hash = "", Sequence ="")
+  
+  hashes <- list(NULL)
+  
   for (i in 1:ncol(seqtab.nochim.df)) {   #for each column of the dataframe
-
+    
     current_seq <-colnames(seqtab.nochim.df)[i]
-
+    
     current_hash <- digest(current_seq,algo = "sha1",serialize = F,skip = "auto")
-
+    
     hashes[[i]] = current_hash
-
+    
     conv_table [i,]<-c(current_hash, current_seq)
-
+    
     colnames(seqtab.nochim.df)[i] <- current_hash
-
+    
   }
-
+  
   write_csv(conv_table, conv_file)
+  
+  seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
+  
+  gather(seqtab.nochim.df, key=Hash, value = nReads, -sample) %>%
+    filter(nReads > 0) -> current_asv
+  
+  write_csv(current_asv, paste0(params$folder,"/ASV_table.csv"))
 }
+
 
 seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
 
@@ -251,7 +251,7 @@ seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
   filter(nReads > 0) -> current_asv
 
 write_csv(current_asv, paste0(params$folder,"/ASV_table.csv"))
-
+getwd()
 
 ## ----merging with previous datasets--------------------------------------
 

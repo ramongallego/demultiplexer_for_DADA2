@@ -1,12 +1,12 @@
 
 
 params <-
-structure(list(folder = "/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180216_1102", 
+structure(list(folder = "/Users/ramongallego/GoogleDrive/fastqs_demultiplexed_for_DADA2/demultiplexed_20180822_1203", 
                hash = "yes",
-               cont = c("yes","/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180214_1641/hash_key.csv",
-                        "/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180214_1641/ASV_table.csv", 
+               cont = c("NO","/Users/ramongallego/GoogleDrive/fastqs_demultiplexed_for_DADA2/demultiplexed_20180822_1203/hash_key.csv",
+                        "/Users/ramongallego/GoogleDrive/fastqs_demultiplexed_for_DADA2/demultiplexed_20180822_1203/ASV_table.csv", 
                         "/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180214_1641/database_log.csv"),
-               fastqs = "/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180216_1102/demultiplexed"),
+               fastqs = "/Users/ramongallego/GoogleDrive/fastqs_demultiplexed_for_DADA2/demultiplexed_20180822_1203/demultiplexed"),
           .Names = c("folder", "hash", "cont", "fastqs"))
 
 ## ----setup, include=FALSE------------------------------------------------
@@ -67,13 +67,14 @@ plotQualityProfile(F2sgood[1:4])
 filt_path <- file.path(params$folder, "/filtered") # Place filtered files in filtered/ subdirectory
 filtF1s <- file.path(filt_path, paste0(good.sample.names, "_F1_filt.fastq.gz"))
 filtF2s <- file.path(filt_path, paste0(good.sample.names, "_F2_filt.fastq.gz"))
-out_Fs <- filterAndTrim(F1sgood, filtF1s, F2sgood, filtF2s, truncLen=c(210,210),
+out_Fs <- filterAndTrim(F1sgood, filtF1s, F2sgood, filtF2s, truncLen=c(120,100),
                       maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
 
+
 filtR1s <- file.path(filt_path, paste0(good.sample.names, "_R1_filt.fastq.gz"))
 filtR2s <- file.path(filt_path, paste0(good.sample.names, "_R2_filt.fastq.gz"))
-out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(210,210),
+out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(120,100),
                       maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE)
 
@@ -125,12 +126,12 @@ mergersF <- mergePairs(dadaF1s, derepF1s, dadaF2s, derepF2s, verbose=T)
 
 for (j in 1:length(mergersF)){
 
-  dadaF1s[[j]]@.Data[[2]] %>% rownames_to_column(var="forward") %>% select("forward", "nunq") ->Fwd
+  dadaF1s[[j]]@.Data[[2]] %>% rownames_to_column(var="forward") %>% dplyr::select("forward", "nunq") ->Fwd
   Fwd$forward<-as.integer(Fwd$forward)
-  dadaF2s[[j]]@.Data[[2]] %>% rownames_to_column(var="reverse") %>% select("reverse", "nunq") ->Rev
+  dadaF2s[[j]]@.Data[[2]] %>% rownames_to_column(var="reverse") %>% dplyr::select("reverse", "nunq") ->Rev
   Rev$reverse<-as.integer(Rev$reverse)
 
-  mergersF[[j]] <- left_join(mergersF[[j]],Fwd, by="forward") %>% left_join(Rev, by="reverse") %>% mutate(nunq=pmin(nunq.x,nunq.y)) %>% select(-nunq.x,-nunq.y)
+  mergersF[[j]] <- left_join(mergersF[[j]],Fwd, by="forward") %>% left_join(Rev, by="reverse") %>% mutate(nunq=pmin(nunq.x,nunq.y)) %>% dplyr::select(-nunq.x,-nunq.y)
 
 
 }
@@ -139,12 +140,12 @@ mergersR <- mergePairs(dadaR1s, derepR1s, dadaR2s, derepR2s, verbose = T)
 
 for (j in 1:length(mergersR)){
 
-  dadaR1s[[j]]@.Data[[2]] %>% rownames_to_column(var="forward") %>% select("forward", "nunq") ->Fwd
+  dadaR1s[[j]]@.Data[[2]] %>% rownames_to_column(var="forward") %>% dplyr::select("forward", "nunq") ->Fwd
   Fwd$forward<-as.integer(Fwd$forward)
-  dadaR2s[[j]]@.Data[[2]] %>% rownames_to_column(var="reverse") %>% select("reverse", "nunq") ->Rev
+  dadaR2s[[j]]@.Data[[2]] %>% rownames_to_column(var="reverse") %>% dplyr::select("reverse", "nunq") ->Rev
   Rev$reverse<-as.integer(Rev$reverse)
 
-  mergersR[[j]] <- left_join(mergersR[[j]],Fwd, by="forward") %>% left_join(Rev, by="reverse") %>% mutate(nunq=pmin(nunq.x,nunq.y)) %>% select(-nunq.x,-nunq.y)
+  mergersR[[j]] <- left_join(mergersR[[j]],Fwd, by="forward") %>% left_join(Rev, by="reverse") %>% mutate(nunq=pmin(nunq.x,nunq.y)) %>% dplyr::select(-nunq.x,-nunq.y)
 
 }
 
