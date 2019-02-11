@@ -10,8 +10,8 @@ get_colnum () {
 	if [[ "${colnum}" > 0 ]]; then
 	  echo "${colnum}"
 	else
-		echo "ERROR! Could not find column: '""${1}""' in metadata file. Exiting."
-		return 1
+		#echo "ERROR! Could not find column: '""${1}""' in metadata file. Exiting."
+		return "0"
 		exit
 	fi
 }

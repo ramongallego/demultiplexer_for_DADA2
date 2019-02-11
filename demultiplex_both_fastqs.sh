@@ -16,7 +16,22 @@ echo "Reading analysis parameters from:"
 echo "${param_file}"
 source "${param_file}"
 
-#Now gather the info we need:
+# Check if the metadata file exists
+if [[ -s "${SEQUENCING_METADATA}" ]]; then
+	echo "Reading metadata from:"
+	echo "${SEQUENCING_METADATA}"
+else
+	echo 'ERROR! Could not find metadata file. You specified the file path:'
+	echo
+	echo "${SEQUENCING_METADATA}"
+	echo
+	echo 'That file is empty or does not exist. Aborting script.'
+	exit
+fi
+
+
+# Now fix line ends if needed
+
 if [[ $( file "${SEQUENCING_METADATA}" ) == *"CRLF"* ]]; then
 
   echo "The file has CRLF endings. Let me fix that for you..."
@@ -58,14 +73,7 @@ cp "${SEQUENCING_METADATA}" "${OUTPUT_DIR}"/metadata.csv
 LOGFILE="${OUTPUT_DIR}"/logfile.txt
 exec > >(tee "${LOGFILE}") 2>&1
 
-#if [[ -d "${OUTPUT_DIRECTORY}" ]]; then
 
-#  echo "Output files would be in ${OUTPUT_DIR}"
-#else
-#  mkdir "${OUTPUT_DIRECTORY}"
-#  mkdir "${OUTPUT_DIR}"
-#  echo "Output files would be in ${OUTPUT_DIR}"
-#fi
 mkdir "${OUTPUT_DIR}"/cleaned
 DEMULT_DIR="${OUTPUT_DIR}"/demultiplexed
 mkdir "${DEMULT_DIR}"
@@ -78,13 +86,16 @@ echo "Metadata has" "${METADATA_DIM[0]}" "rows and" "${METADATA_DIM[1]}" "column
 N_SAMPLES=$( echo "${METADATA_DIM[0]}" - 1 | bc )
 echo "Expecting" "${N_SAMPLES}" "samples total."
 echo
-##NOW WE HAVE LOADED THE SEQUENCING_METADATA - WE NEED IT
+## NOW WE HAVE LOADED THE SEQUENCING_METADATA - WE NEED to find the columns specified
+## in the params file. We should set up an alert & quit if a critical column is not found
+
 # Filnames
 COLNUM_FILE1=$( get_colnum "${COLNAME_FILE1}" "${SEQUENCING_METADATA}")
 COLNUM_FILE2=$( get_colnum "${COLNAME_FILE2}" "${SEQUENCING_METADATA}")
-
+# Pass check
 # Library names
 COLNUM_ID1=$( get_colnum "${COLNAME_ID1_NAME}" "${SEQUENCING_METADATA}")
+
 COLNUM_ID1_SEQ=$( get_colnum "${COLNAME_ID1_SEQ}" "${SEQUENCING_METADATA}")
 
 # Secondary indices
@@ -99,6 +110,26 @@ COLNUM_SAMPLE=$( get_colnum "${COLNAME_SAMPLE_ID}" "${SEQUENCING_METADATA}")
 # Primers
 COLNUM_PRIMER1=$( get_colnum "${COLNAME_PRIMER1}" "${SEQUENCING_METADATA}")
 COLNUM_PRIMER2=$( get_colnum "${COLNAME_PRIMER2}" "${SEQUENCING_METADATA}")
+
+# Run away from the script if any of the previous columns was not found
+
+all_columns=( COLNUM_FILE1 COLNUM_FILE2 COLNUM_ID1 COLNUM_ID1_SEQ COLNUM_ID2 \
+COLNUM_ID2_START COLNUM_SAMPLE COLNUM_PRIMER1 COLNUM_PRIMER2)
+
+echo "Checking that all columns in metadata are there"
+
+for column in "${all_columns[@]}" ; do
+
+ if [ "${!column}" > 0 ]; then
+	 echo "looking good, ${column}"
+ else
+  echo "Something went wrong with column name ${column}"
+	echo "exiting script"
+	exit
+fi
+done
+echo "All columns passed test"
+
 
 ################################################################################
 # ADDING TO PREVIOUS ANALYSIS?
@@ -217,6 +248,9 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	  exit
 	fi
 
+
+
+
 #######
 #Unique samples are given by combining the primary and secondary indexes
 ######
@@ -227,6 +261,23 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 
 	SAMPLE_NAMES=($(awk -F',' -v COLNUM=$COLNUM_SAMPLE \
 	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}" ))
+
+#####
+# Check that sample names are not repeated
+#####
+NSAMPLES="${#SAMPLE_NAMES[@]}"
+
+# Now calculate the number of unique sample names
+UNIQ_SAMPLES=( $(echo "${SAMPLE_NAMES[@]}" | tr ' ' '\n' | sort -u))
+N_UNIQ_SAMPLES="${#UNIQ_SAMPLES[@]}"
+
+
+if [[ "${NSAMPLES}" != "${N_UNIQ_SAMPLES}" ]]; then
+	echo " At least one sample name is repeated "
+	echo " I am not angry, just dissapointed. Exiting script"
+	exit
+fi
+
 
 	ID1_ALL=($(awk -F',' -v COLNUM=$COLNUM_ID1 \
 	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}" ))
