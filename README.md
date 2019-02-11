@@ -7,7 +7,7 @@ This script will look for your adapters and pcr primers on your reads, and retur
 
 This script has been tested in MacOS X. It should work in Linux as well, but I think different `sed` versions will return different results.
 
-The script relies mostly on R pckages. Besides that, you will need the latest version of cutadapt ("https://cutadapt.readthedocs.io/en/stable/index.html").
+The script relies mostly on R pckages. Besides that, you will need the latest version of cutadapt (https://cutadapt.readthedocs.io/en/stable/index.html).
 
 ### R packages
 
