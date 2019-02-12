@@ -67,8 +67,10 @@ OUTPUT_DIR="${OUTPUT_DIRECTORY}"/demultiplexed_"${START_TIME}"
 
 mkdir "${OUTPUT_DIR}"
 echo "Output directory is ${OUTPUT_DIR}"
-# copy metadata file to ouput directory
+# copy metadata and parameters file to output directory
 cp "${SEQUENCING_METADATA}" "${OUTPUT_DIR}"/metadata.csv
+cp "${param_file}" "${OUTPUT_DIR}"/banzai_params.sh
+
 # Write a log file
 LOGFILE="${OUTPUT_DIR}"/logfile.txt
 exec > >(tee "${LOGFILE}") 2>&1
