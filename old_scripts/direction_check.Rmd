@@ -1,0 +1,124 @@
+---
+title: "Direction check report"
+author: "Ramón Gallego"
+date: "1/9/2018"
+output: html_document
+params:
+  output_folder:
+    value: z
+
+
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir=params$output_folder)
+```
+
+# Direction report
+
+You have successfully split your libraries and run dada2, and merge the forward and reverse
+sequences. But you maybe want to double check that you have all sequences in the right direction. This is a report of that feature.
+
+This runs in bash, mostly. We will source the parameters file, copy the path to the original .1.fastq and .2.fastq, and search if the sequences we obtained in our pipeline (from seqnames.txt) are in the direction they promised.
+
+
+```{r loading packages, echo=FALSE ,message=FALSE}
+library (devtools)
+library (tidyverse)
+library (Biostrings)
+library (digest)
+
+
+
+results_search=read_delim("matches.txt", delim = "\t", col_names = c("Primer","File", "nMatches"))
+results_search
+results_search %>%
+ group_by(Primer) %>%
+  summarise(Total=sum(nMatches)) %>%
+  pull (Total) -> results_spread
+names(results_spread) <- results_search %>%
+  group_by(Primer) %>%
+   summarise(Total=sum(nMatches)) %>% pull (1)
+
+results_spread
+direction=NULL
+
+# So here is my solution: If all or 99% of the reads are Fwd - then we assume they are all Fwd and no RC is needed
+# If all or 99% of the reads are Reverse Complemented - then I assumy they are all RC and we'll proceed with revcom
+# IF there is more than 1% difference then we'll call it mixed and throw a warning message and don't do anything
+
+ifelse(results_spread["Rev_Primer"]== 0 | (results_spread["Fwd_Primer"] / results_spread["Rev_Primer"])>100, yes = direction <- "Fwd",
+     ifelse(results_spread["Fwd_Primer"]==0 | (results_spread["Rev_Primer"] / results_spread["Fwd_Primer"])>100, yes = direction <- "Rev", no = direction <- "MIXED"))
+direction
+
+if (direction == "MIXED") {
+
+  print(" Seems like some of your reads are in the Fwd direction but others are Reverse Complemented - You should look into that")
+  
+}
+
+if (direction == "Rev") {
+
+  print(" Seems like your reads are in the Reverse Complemented direction - I'm going to fix that for you ")
+# Check if there is a Hash key
+if (file.exists("hash_key.csv")){
+  print("Found a hash key file")
+  Hash_key <- read_csv("hash_key.csv")
+  ASV_table <- read_csv("ASV_table.csv")
+
+  Hash_key %>%
+    mutate (RRC = as.character(reverseComplement(DNAStringSet(.$Sequence)))) -> Hash_key
+
+  Nhash=NULL
+
+  for (i in 1:nrow(Hash_key)){
+
+    Nhash[i] = digest(Hash_key$RRC[i],algo = "sha1",serialize = F,skip = "auto")
+
+  }  
+  Hash_key$NHash <- Nhash
+  # Now substitute the Hash in the ASV table
+  ASV_table %>%
+    left_join(Hash_key %>% select(Hash, NHash)) %>%
+    select(sample, Hash = NHash, nReads) -> ASV_table
+  ASV_table %>%
+    write_csv("New_ASV_table.csv")
+  print("Saving a new ASV table")
+  # And write the new Hash Key
+Hash_key %>%
+  select(Hash = NHash, Sequence = RRC) %>%
+  write_csv("New_hash_key.csv")
+print("Saving a new hash key")
+}else {    # In case there is no Hash key file, we assume the user did not want hashes and wanted to keep
+          # Raw sequences in the ASV.table
+
+ASV_table <- read_csv("ASV_table.csv")
+
+# Check the Hashes are real sequences
+
+if(sum(str_detect(colnames(ASV_table), "Hash")) == 1){
+  print ("Not sure what is going on here: Can't find a hash key but you have hashes")
+  knitr::knit_exit()
+  }else{
+  if(sum(str_detect(ASV_table$Sequence, "[^ATGC]")) > 0){
+    print ("You have not-IUPAC characters or ambiguities in your sequences")
+    knitr::knit_exit()
+  }else{
+    ASV_table %>%
+      mutate (Sequence = as.character(reverseComplement(DNAStringSet(.$Sequence)))) %>%
+      write_csv("New_ASV_table.csv")
+    print("Saving a new ASV table")
+  }  
+}  
+}
+}
+
+if (direction == "Fwd") {
+
+  print ("All your reads are in the Fwd direction - Congratulations")
+}
+
+
+```
