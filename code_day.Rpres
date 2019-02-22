@@ -3,6 +3,11 @@ code_day
 author: Ramón Gallego
 date: 20180827
 autosize: true
+<style>
+.small-code pre code {
+  font-size: 1em;
+}
+</style>
 
 What does this pipeline do?
 ========================================================
