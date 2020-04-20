@@ -318,48 +318,55 @@ We are going to keep the info in a tidyr format and save it into a csv file
 
 seqtab.nochim.df=as.data.frame(seqtab.nochim)
 
-
+ASV.file <- file.path(params$folder, "ASV_table.csv")
 
 # Now decide if you want hashing or not
 
 if (grepl ("yes", params$hash, ignore.case = TRUE)) {
 
-  conv_file = paste0(params$folder,"/hash_key.csv")
+  conv_file <-  file.path(params$folder,"hash_key.csv")
 
   conv_table <- tibble( Hash = "", Sequence ="")
 
-  hashes <- list(NULL)
+  #hashes <- list(NULL)
+  
+  map_chr (colnames(seqtab.nochim.df), ~ digest(.x, algo = "sha1", serialize = F, skip = "auto")) -> Hashes
+  conv_table <- tibble (Hash = Hashes,
+                        Sequence = colnames(seqtab.nochim.df))
+  
+  colnames(seqtab.nochim.df) <- Hashes
 
-  for (i in 1:ncol(seqtab.nochim.df)) {   #for each column of the dataframe
-
-    current_seq <-colnames(seqtab.nochim.df)[i]
-
-    current_hash <- digest(current_seq,algo = "sha1",serialize = F,skip = "auto")
-
-    hashes[[i]] = current_hash
-
-    conv_table [i,]<-c(current_hash, current_seq)
-
-    colnames(seqtab.nochim.df)[i] <- current_hash
-
-  }
+  # for (i in 1:ncol(seqtab.nochim.df)) {   #for each column of the dataframe
+  # 
+  #   current_seq <-colnames(seqtab.nochim.df)[i]
+  # 
+  #   current_hash <- digest(current_seq,algo = "sha1",serialize = F,skip = "auto")
+  # 
+  #   hashes[[i]] <-  current_hash
+  # 
+  #   conv_table [i,]<-c(current_hash, current_seq)
+  # 
+  #   colnames(seqtab.nochim.df)[i] <- current_hash
+  # 
+  # }
 
   write_csv(conv_table, conv_file)
 
 
-seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
+seqtab.nochim.df %>%
+  rownames_to_column("sample") %>%
+  pivot_longer(-sample, names_to="Hash", values_to = "nReads") %>%
+  filter (nReads > 0) -> current_asv
 
- gather(seqtab.nochim.df, key=Hash, value = nReads, -sample) %>%
-  filter(nReads > 0) -> current_asv
+write_csv(current_asv, ASV.file)
 
-write_csv(current_asv, paste0(params$folder,"/ASV_table.csv"))
 } else { #What do we do if you don't want hashes: two things - Change the header of the ASV table, write only one file
 
-  seqtab.nochim.df$sample=rownames(seqtab.nochim.df)
-
-  gather(seqtab.nochim.df, key=Sequence, value = nReads, -sample) %>%
-   filter(nReads > 0) -> current_asv
-  write_csv(current_asv, paste0(params$folder,"/ASV_table.csv"))
+  seqtab.nochim.df %>%
+  rownames_to_column("sample") %>%
+  pivot_longer(-sample, names_to="Sequence", values_to = "nReads") %>%
+  filter (nReads > 0) ->  current_asv
+  write_csv(current_asv, ASV.file)
 }
 
 
