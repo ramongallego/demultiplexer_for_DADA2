@@ -93,7 +93,7 @@ echo
 
 # Filnames
 COLNUM_FILE1=$( get_colnum "${COLNAME_FILE1}" "${SEQUENCING_METADATA}")
-COLNUM_FILE2=$( get_colnum "${COLNAME_FILE2}" "${SEQUENCING_METADATA}")
+#COLNUM_FILE2=$( get_colnum "${COLNAME_FILE2}" "${SEQUENCING_METADATA}")
 # Pass check
 # Library names
 COLNUM_ID1=$( get_colnum "${COLNAME_ID1_NAME}" "${SEQUENCING_METADATA}")
@@ -115,7 +115,7 @@ COLNUM_PRIMER2=$( get_colnum "${COLNAME_PRIMER2}" "${SEQUENCING_METADATA}")
 
 # Run away from the script if any of the previous columns was not found
 
-all_columns=( COLNUM_FILE1 COLNUM_FILE2 COLNUM_ID1 COLNUM_ID1_SEQ COLNUM_ID2 \
+all_columns=( COLNUM_FILE1 COLNUM_ID1 COLNUM_ID1_SEQ COLNUM_ID2 \
 COLNUM_ID2_START COLNUM_SAMPLE COLNUM_PRIMER1 COLNUM_PRIMER2)
 
 echo "Checking that all columns in metadata are there"
@@ -136,28 +136,28 @@ echo "All columns passed test"
 ################################################################################
 # ADDING TO PREVIOUS ANALYSIS?
 ################################################################################
-if [[ "${ADD_TO_PREVIOUS}" = "YES" ]]; then
-	echo "You chose to add this analysis to a previous one"
-	if [[ -n "${FORMER_HASH}" && -n "${FORMER_ABUNDANCE}" ]]; then
-		echo "Using hash database from ${FORMER_HASH}"
-		echo "Using ASV table from ${FORMER_ABUNDANCE}"
-	else
-		echo "Uppss, at least one of these files is missing"
-		echo " - A Hash / sequence conversion table"
-		echo " - An Abundance dataset "
-		echo "Set the path to these files in the params file"
-		exit
-	fi
-
-	if [[ -s "${LOG_FILE}" ]] ; then
-		echo "Adding merge information to ${LOG_FILE}"
-	else
-		echo "No logfile provided or found"
-		echo "Starting a new merge logfile"
-		LOG_FILE="${OUTPUT_DIR}"/database_log.csv
-		echo "New file is ${LOG_FILE}"
-	fi
-fi
+# if [[ "${ADD_TO_PREVIOUS}" = "YES" ]]; then
+# 	echo "You chose to add this analysis to a previous one"
+# 	if [[ -n "${FORMER_HASH}" && -n "${FORMER_ABUNDANCE}" ]]; then
+# 		echo "Using hash database from ${FORMER_HASH}"
+# 		echo "Using ASV table from ${FORMER_ABUNDANCE}"
+# 	else
+# 		echo "Uppss, at least one of these files is missing"
+# 		echo " - A Hash / sequence conversion table"
+# 		echo " - An Abundance dataset "
+# 		echo "Set the path to these files in the params file"
+# 		exit
+# 	fi
+# 
+# 	if [[ -s "${LOG_FILE}" ]] ; then
+# 		echo "Adding merge information to ${LOG_FILE}"
+# 	else
+# 		echo "No logfile provided or found"
+# 		echo "Starting a new merge logfile"
+# 		LOG_FILE="${OUTPUT_DIR}"/database_log.csv
+# 		echo "New file is ${LOG_FILE}"
+# 	fi
+# fi
 
 
 ################################################################################
@@ -172,29 +172,29 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	  'NR>1 {  print $COLNUM }' $SEQUENCING_METADATA |\
 	  sort | uniq))
 
-	FILE2=($(awk -F',' -v COLNUM=$COLNUM_FILE2 \
-	  'NR>1 {print $COLNUM}' $SEQUENCING_METADATA |\
-	  sort | uniq ))
+	# FILE2=($(awk -F',' -v COLNUM=$COLNUM_FILE2 \
+	#   'NR>1 {print $COLNUM}' $SEQUENCING_METADATA |\
+	#   sort | uniq ))
 
 	NFILE1="${#FILE1[@]}"
-	NFILE2="${#FILE2[@]}"
-	if [ "${NFILE1}" != "${NFILE2}" ]; then
-		echo "ERROR: Whoa! different number of forward and reverse files"
-	fi
+	# NFILE2="${#FILE2[@]}"
+	# if [ "${NFILE1}" != "${NFILE2}" ]; then
+	# 	echo "ERROR: Whoa! different number of forward and reverse files"
+	# fi
 
-	if [[ -n "${FILE1}" && -n "${FILE2}" ]]; then
-	  echo 'Files read from metadata columns' "${COLNUM_FILE1}" 'and' "${COLNUM_FILE2}"
+	# if [[ -n "${FILE1}" && -n "${FILE2}" ]]; then
+	  echo 'Files read from metadata columns' "${COLNUM_FILE1}" 
 	  echo 'File names:'
 		for (( i=0; i < "${NFILE1}"; ++i)); do
-			printf '%s\t%s\n' "${FILE1[i]}" "${FILE2[i]}"
+			printf '%s\t%s\n' "${FILE1[i]}" 
 		done
 		echo
-	else
-	  echo 'ERROR:' 'At least one file is not valid'
-	  echo 'Looked in metadata columns' "${COLNUM_FILE1}" 'and' "${COLNUM_FILE2}"
-	  echo 'Aborting script'
-	  exit
-	fi
+	# else
+	#   echo 'ERROR:' 'At least one file is not valid'
+	#   echo 'Looked in metadata columns' "${COLNUM_FILE1}" 
+	#   echo 'Aborting script'
+	#   exit
+	# fi
 	#here we play again
 	if [[ "${SECONDARY_INDEX}" == "YES" ]]; then
 
@@ -203,9 +203,9 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 		  sort | uniq))
 		N_index_sequences="${#ID2S[@]}"
 		ID2_LENGTH=${#ID2S[0]}
-		ID2_START=($(awk -F',' -v COLNUM=$COLNUM_ID2_START \
-		  'NR>1 {  print $COLNUM }' $SEQUENCING_METADATA |\
-		  sort | uniq))
+		# ID2_START=($(awk -F',' -v COLNUM=$COLNUM_ID2_START \
+		#   'NR>1 {  print $COLNUM }' $SEQUENCING_METADATA |\
+		#   sort | uniq))
 
 		# check if number of indexes is greater than one:
 		if [[ "${N_index_sequences}" -gt 1 ]]; then
@@ -238,10 +238,14 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	PRIMER2=($(awk -F',' -v COLNUM=$COLNUM_PRIMER2 \
 	  'NR > 1 { print $COLNUM }' $SEQUENCING_METADATA |\
 	  sort | uniq ))
+	
+	PRIMER2_RC=($( for i in "${PRIMER2[@]}"; do revcom $i; done))
 
 	if [[ -n "${PRIMER1}" && -n "${PRIMER2}" ]]; then
 	  echo 'Primers read from metadata columns' "${COLNUM_PRIMER1}" 'and' "${COLNUM_PRIMER2}"
 	  echo 'Primer sequences:' "${PRIMER1}" "${PRIMER2}"
+		echo
+		echo 'Reverse Complemented ' "${PRIMER2}" 'into' "${PRIMER2_RC}"
 		echo
 	else
 	  echo 'ERROR:' 'At least one primer is not valid'
@@ -304,19 +308,28 @@ fi
 
 
 	done
-
-
-#Create the fasta file of the barcodes
-
+	# Create the BARCODE FILE for nanopore
 	Barcodes_file="$OUTPUT_DIR"/barcodes.fasta
-	for (( i=0; i < "${#ID2S[@]}"; i++ )); do
-	  printf ">%s\n^NNN%s\n" \
-		"${ID2S[i]}" "${ID2S[i]}" >> "${Barcodes_file}"
+	for (( i=0; i < "${#ID2_ALL[@]}"; i++ )); do
+	
+	
+	printf ">%s_%s\n%s...%s\n" \
+		"${ID1_ALL[i]}" "${ID2_ALL[i]}" \
+		"${ID1S[i]}" "${ID2_ALL_RC[i]}" >> "${Barcodes_file}"
 	done
+	
+
+# #Create the fasta file of the barcodes
+# 
+# 	Barcodes_file="$OUTPUT_DIR"/barcodes.fasta
+# 	for (( i=0; i < "${#ID2S[@]}"; i++ )); do
+# 	  printf ">%s\n^NNN%s\n" \
+# 		"${ID2S[i]}" "${ID2S[i]}" >> "${Barcodes_file}"
+# 	done
 
 	primers_file="${OUTPUT_DIR}"/pcr_primers.fasta
 
-	printf ">FWD\n${PRIMER1}\n>REV\n${PRIMER2}\n" > "${primers_file}"
+	printf ">FWD\n${PRIMER1}\n>REV\n${PRIMER2_RC}\n" > "${primers_file}"
 
 	source "${SCRIPT_DIR}"/functions/check_primers.sh "${primers_file}"
 
@@ -339,35 +352,42 @@ fi
 	  # Identify the forward and reverse fastq files.
 
 	  READ1="${PARENT_DIR}/${FILE1[i]}"
-		READ2="${PARENT_DIR}/${FILE2[i]}"
+		# READ2="${PARENT_DIR}/${FILE2[i]}"
 
 	  BASE1="${FILE1[i]%.*}"
-	  BASE2="${FILE2[i]%.*}"
+	  # BASE2="${FILE2[i]%.*}"
 
-	  mkdir "${OUTPUT_DIR}"/"${ID1S[i]}"
+	  mkdir "${OUTPUT_DIR}"/"${FILE1[i]}"
 
 
-		mkdir "${OUTPUT_DIR}"/cleaned/"${ID1S[i]}"
+		mkdir "${OUTPUT_DIR}"/cleaned/"${FILE1[i]}"
 
 		echo "Working on Library $[i+1] out of ${#FILE1[@]}"
 
 	##First cutdapt:
 	#TODO: use only the number of barcodes used for this Library
+	
+	
 
 
-	cutadapt -g file:"${Barcodes_file}" -o "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.1.fastq -p "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.2.fastq \
-	 "${READ1}" "${READ2}" --quiet --discard-untrimmed
+	cutadapt -g file:"${Barcodes_file}" -o "${OUTPUT_DIR}"/${FILE1[i]}/${FILE1[i]}-{name}_round1.fastq \
+	 "${READ1}" --quiet --discard-untrimmed -e 0.2
 
 
-	#This split each pair of fastqs into as many pairs of fastqs as barcodes are
+	#This split each fastq into as many pairs of fastqs as barcodes are
 	#but only looking at them on the .1 file -> do the same on the other file, and keep
 	#the order of reads similar in both files
 
-		n_files=("${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.2.fastq)
+		n_files=("${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.fastq)
 
 		i_count=0
 
 	 for file in "${n_files[@]}"; do
+	 BASE_OUTPUT$(basename "${file}") 
+	 	cutadapt -g file:"${primers_file}" --discard-untrimmed\
+	 -o "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.1.fastq \
+	 -p "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
+	 "${file}"  --quiet 2>> "${LOGFILE}"
 # We loop through all .2 files
 		i_count=$((i_count+1))
  #The barcode detected on the .1 is written in the name, so we now look
