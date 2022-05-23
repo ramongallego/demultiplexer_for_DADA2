@@ -103,8 +103,6 @@ COLNUM_ID1_SEQ=$( get_colnum "${COLNAME_ID1_SEQ}" "${SEQUENCING_METADATA}")
 # Secondary indices
 COLNUM_ID2=$( get_colnum "${COLNAME_ID2_SEQ}" "${SEQUENCING_METADATA}")
 
-# Secondary index sequence positions
-COLNUM_ID2_START=$( get_colnum "${COLNAME_ID2_START}" "${SEQUENCING_METADATA}")
 
 # Sample names
 COLNUM_SAMPLE=$( get_colnum "${COLNAME_SAMPLE_ID}" "${SEQUENCING_METADATA}")
@@ -116,7 +114,7 @@ COLNUM_PRIMER2=$( get_colnum "${COLNAME_PRIMER2}" "${SEQUENCING_METADATA}")
 # Run away from the script if any of the previous columns was not found
 
 all_columns=( COLNUM_FILE1 COLNUM_ID1 COLNUM_ID1_SEQ COLNUM_ID2 \
-COLNUM_ID2_START COLNUM_SAMPLE COLNUM_PRIMER1 COLNUM_PRIMER2)
+COLNUM_SAMPLE COLNUM_PRIMER1 COLNUM_PRIMER2)
 
 echo "Checking that all columns in metadata are there"
 
@@ -284,7 +282,7 @@ fi
 
 	ID1_ALL=($(awk -F',' -v COLNUM=$COLNUM_ID1 \
 	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}" ))
-	ID1S=($(awk -F',' -v COLNUM=$COLNUM_ID1 \
+	ID1S=($(awk -F',' -v COLNUM=COLNUM_ID1_SEQ \
 	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}"  |\
 			sort | uniq))
 	ID2_ALL=($(awk -F',' -v COLNUM=$COLNUM_ID2 \
@@ -310,7 +308,7 @@ fi
 	for (( i=0; i < "${#ID2_ALL[@]}"; i++ )); do
 	
 	
-	printf ">%s_%s\n%s...%s\n" \
+	printf ">%s_%s\n%s"..."%s\n" \
 		"${ID1_ALL[i]}" "${ID2_ALL[i]}" \
 		"${ID1S[i]}" "${ID2_ALL_RC[i]}" >> "${Barcodes_file}"
 	done
@@ -357,7 +355,6 @@ fi
 	  mkdir "${OUTPUT_DIR}"/"${FILE1[i]}"
 
 
-		mkdir "${OUTPUT_DIR}"/noprimers/"${FILE1[i]}"
 
 		echo "Working on Library $[i+1] out of ${#FILE1[@]}"
 
@@ -383,8 +380,10 @@ fi
 	 for file in "${n_files[@]}"; do
 	 BASE_OUTPUT=$(basename "${file}" |  sed 's/_round1.fastq//g') 
 	 
+	 mkdir "${BASE_OUTPUT}"
+	 
 	 	cutadapt -g file:"${primers_file}" --discard-untrimmed \
-	 -o "${OUTPUT_DIR}"/noprimers/${ID1S[i]}/"${BASE_OUTPUT}"_{name}.fastq \
+	 -o "${DEMULT_DIR}"/"${BASE_OUTPUT}"/"${BASE_OUTPUT}"_{name}.fastq \
 	 "${file}"  --quiet -e 0.2 >> "${LOGFILE}"
 # We loop through all .2 files
 		i_count=$((i_count+1))
@@ -400,8 +399,9 @@ fi
 	done
 
 
-if [[ "${SEARCH_ASVs}" = "YES" ]]; then
-	echo "This is read1 ${READ1}"
-	Rscript "${SCRIPT_DIR}"/r/dada2.r "${OUTPUT_DIR}" "${DEMULT_DIR}" "${SCRIPT_DIR}" "${USE_HASH}" "${READ1}" "${READ2}"\
-	"${ADD_TO_PREVIOUS}" "${FORMER_HASH}" "${FORMER_ABUNDANCE}" "${LOG_FILE}"
-fi
+# if [[ "${SEARCH_ASVs}" = "YES" ]]; then
+# 	echo "launching decona"
+# 	conda activate decona
+# 	
+# 	Rscript "${SCRIPT_DIR}"/r/dada2.r "${OUTPUT_DIR}" "${DEMULT_DIR}" "${SCRIPT_DIR}" "${USE_HASH}" "${READ1}" 
+# fi
