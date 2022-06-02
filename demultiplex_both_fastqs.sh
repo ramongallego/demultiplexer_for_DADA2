@@ -115,7 +115,7 @@ COLNUM_PRIMER2=$( get_colnum "${COLNAME_PRIMER2}" "${SEQUENCING_METADATA}")
 
 # Run away from the script if any of the previous columns was not found
 
-all_columns=( COLNUM_FILE1 COLNUM_FILE2 COLNUM_ID1 COLNUM_ID1_SEQ COLNUM_ID2 \
+all_columns=( COLNUM_FILE1 COLNUM_FILE2 COLNUM_ID1 COLNUM_ID2 \
 COLNUM_ID2_START COLNUM_SAMPLE COLNUM_PRIMER1 COLNUM_PRIMER2)
 
 echo "Checking that all columns in metadata are there"
@@ -364,6 +364,8 @@ fi
 	#the order of reads similar in both files
 
 		n_files=("${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.2.fastq)
+		
+		echo "${n_files}"
 
 		i_count=0
 
