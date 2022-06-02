@@ -282,19 +282,42 @@ fi
 
 	ID1_ALL=($(awk -F',' -v COLNUM=$COLNUM_ID1 \
 	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}" ))
-	ID1S=($(awk -F',' -v COLNUM=COLNUM_ID1_SEQ \
+	ID1S=($(awk -F',' -v COLNUM=$COLNUM_ID1_SEQ \
 	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}"  |\
 			sort | uniq))
+			
+	ID1S_many=($(awk -F',' -v COLNUM=$COLNUM_ID1_SEQ \
+	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}"))	
+	  
+	echo "This is what I was printing"
+	
+	echo "${ID1S}"
+	
+	echo "Is this better?"
+	
+	echo "${ID1S_many}"
+	
+  echo "Which column is this"
+  
+  echo "${COLNUM_ID1_SEQ}"
+  
+  echo "Show me column 3 then"
+  
+ 
+
+			
 	ID2_ALL=($(awk -F',' -v COLNUM=$COLNUM_ID2 \
 	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}" ))
 	ID2_ALL_RC=($( for i in "${ID2_ALL[@]}"; do revcom $i; done))
+
+  echo "${ID2_ALL_RC}"
 
 # write file for translating demultiplexed output to samples
 	SAMPLE_TRANS_FILE="${OUTPUT_DIR}"/sample_trans.tmp
 	for (( i=0; i < "${#ID2_ALL[@]}"; i++ )); do
 	  printf "ID1=%s;ID2A=%s;ID2B=%s\t%s_%s\t%s\n" \
 		"${ID1_ALL[i]}" "${ID2_ALL[i]}" "${ID2_ALL_RC[i]}" \
-		"${ID1_ALL[i]}" "${ID2_ALL[i]}" \
+		"${ID1S_many[i]}" "${ID2_ALL[i]}" \
 		"${SAMPLE_NAMES[i]}" >> "${SAMPLE_TRANS_FILE}"
 	done
 	for (( i=0; i < "${#ID1S[@]}"; i++ )); do
@@ -305,14 +328,17 @@ fi
 	done
 	# Create the BARCODE FILE for nanopore
 	Barcodes_file="$OUTPUT_DIR"/barcodes.fasta
+	
+	
 	for (( i=0; i < "${#ID2_ALL[@]}"; i++ )); do
 	
 	
 	printf ">%s_%s\n%s"..."%s\n" \
 		"${ID1_ALL[i]}" "${ID2_ALL[i]}" \
-		"${ID1S[i]}" "${ID2_ALL_RC[i]}" >> "${Barcodes_file}"
+		"${ID1S_many[i]}" "${ID2_ALL_RC[i]}" >> "${Barcodes_file}"
 	done
 	
+	head "${Barcodes_file}"
 
 # #Create the fasta file of the barcodes
 # 
@@ -361,12 +387,22 @@ fi
 	##First cutdapt:
   
   
+	# Look for the reverse primer and if found, reverse the output
 	
-	
+	cutadapt -g "${PRIMER1}" -o "${READ1}".new.fastq --quiet --action=none --rc -e 0.3 "${READ1}"
 
+  echo "Number of lines to begin with"
+  
+  wc -l "${READ1}"
+  
+  echo "Number of lines after"
+  
+  wc -l "${READ1}".new.fastq
+  
+  cat "${Barcodes_file}"
 
 	cutadapt -g file:"${Barcodes_file}" -o "${OUTPUT_DIR}"/${FILE1[i]}/${FILE1[i]}-{name}_round1.fastq \
-	 "${READ1}" --quiet --discard-untrimmed -e 0.2 --rc
+	 "${READ1}".new.fastq --quiet --discard-untrimmed -e 0.2 --rc
 
 
 	#This split each fastq into as fastqs as barcodes are
@@ -374,11 +410,15 @@ fi
 	#the order of reads similar in both files
 
 		n_files=("${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.fastq)
+		
+		echo "${n_files[@]}"
 
 		i_count=0
 
 	 for file in "${n_files[@]}"; do
 	 BASE_OUTPUT=$(basename "${file}" |  sed 's/_round1.fastq//g') 
+	 
+	 echo "${BASE_OUTPUT}"
 	 
 	 mkdir "${BASE_OUTPUT}"
 	 
