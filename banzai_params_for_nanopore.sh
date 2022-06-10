@@ -88,10 +88,11 @@ COLNAME_LOCUS="Locus"
 USE_HASH="YES"
 
 ################################################################################
-# CLUSTER OTUs: USING DADA2
+# CLUSTER OTUs: USING decona or NGspeciesID
 ################################################################################
 
-SEARCH_ASVs="YES"
+SEARCH_ASVs="decona"
+
 
 ## TODO: Add variables to control the behaviour of decona
 
@@ -99,7 +100,7 @@ MIN_LENGTH="800"
 
 MAX_LENGTH="1900"
 
-
+CLUSTER_SIM="0.8"
 
 
 
