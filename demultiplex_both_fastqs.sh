@@ -92,7 +92,9 @@ echo
 ## in the params file. We should set up an alert & quit if a critical column is not found
 
 # Filnames
+echo "${COLNAME_FILE1}"
 COLNUM_FILE1=$( get_colnum "${COLNAME_FILE1}" "${SEQUENCING_METADATA}")
+echo "${COLNUM_FILE1}"
 #COLNUM_FILE2=$( get_colnum "${COLNAME_FILE2}" "${SEQUENCING_METADATA}")
 # Pass check
 # Library names
@@ -411,11 +413,16 @@ fi
 
 		n_files=("${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.fastq)
 		
+	#		n_files=("${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.2.fastq)
+		
 		echo "${n_files[@]}"
 
 		i_count=0
 
-	 for file in "${n_files[@]}"; do
+	 for file in "${OUTPUT_DIR}"/"${ID1S[i]}"/*; do
+	 
+	 echo "${file}"
+	 
 	 BASE_OUTPUT=$(basename "${file}" |  sed 's/_round1.fastq//g') 
 	 
 	 echo "${BASE_OUTPUT}"
