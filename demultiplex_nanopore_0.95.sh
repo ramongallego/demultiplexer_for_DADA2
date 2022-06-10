@@ -1,7 +1,9 @@
 #!/bin/bash
 # Start by activating decona
-# Usage bash demultiplex_both_fastqs.sh banzai_params.sh
+# Usage bash demultiplex_both_fastqs.sh banzai_params.sh ...
 #This script is built using banzai (github.com/jimmyodonnell/banzai) as template
+
+# Can we overwrite any arguments?
 
 #We need to gather: Location of functions  and fastqs:
 MAIN_DIR="$(dirname "$0")"
@@ -64,7 +66,7 @@ fi
 
 #Create output directory
 START_TIME=$(date +%Y%m%d_%H%M)
-OUTPUT_DIR="${OUTPUT_DIRECTORY}"/demultiplexed_"${START_TIME}"
+OUTPUT_DIR="/home/mk1b/test_ns/n_0.95"
 
 mkdir "${OUTPUT_DIR}"
 echo "Output directory is ${OUTPUT_DIR}"
@@ -369,7 +371,7 @@ fi
 # to get the .1 files trimmed and the .2 selected along
 
 	OUTPUT_SUMMARY="${OUTPUT_DIR}/summary.csv"
-	printf "First_trim_R1,nReads_R1,First_trim_R2,nReads_R2,Second_trim_R1,nReads_StR1,Second_trim_R2,nReads_StR2,NEW_OUTPUT_Fwd_1,nreadsFwd,NEW_OUTPUT_Rev_1,nreadsRev\n" \
+	printf "Sample,locus,demultiplexed,noprimers\n" \
 	> "${OUTPUT_SUMMARY}"
 
 ################################################################################
@@ -419,9 +421,7 @@ fi
 
 		n_files=("${DEMULT_DIR}"/"${FILE1[i]}"/*round1.fastq)
 
-		#echo "${n_files}"
 
-		i_count=0
 
 	 ls "${DEMULT_DIR}"/"${FILE1[i]}"/
 
@@ -440,14 +440,22 @@ fi
 	 	cutadapt -g file:"${primers_file}" --discard-untrimmed \
 	 -o "${FINAL_DIR}"/"${FILE1[i]}"/"${BASE_OUTPUT}"/"${BASE_OUTPUT}"_{name}.fastq \
 	 "${file}"  --quiet -e 0.2 >> "${LOGFILE}"
-# We loop through all .2 files
-		i_count=$((i_count+1))
- #The barcode detected on the .1 is written in the name, so we now look
- #for that barcode at the beggining of the .2 read
+
+	nseq_demult=$(cat "${file}" | wc -l)
+
+	for file2 in "${FINAL_DIR}"/"${FILE1[i]}"/"${BASE_OUTPUT}"/; do
 
 
+	nseq_noprimer=$(cat ${file2} | wc -l)
+
+	 printf "%s,%s,%s,%s\n" \
+	 "${BASE_OUTPUT}" "${file2}" \
+	  "${nseq_demult}" "${nseq_noprimer}" >> "${OUTPUT_SUMMARY}"
+	done
 
 cd "${FINAL_DIR}"/"${FILE1[i]}"/"${BASE_OUTPUT}"
+
+
 
 decona -l "${MIN_LENGTH}" -m "${MAX_LENGTH}" -q 10 -c 0.80 -n 10 -M
 
