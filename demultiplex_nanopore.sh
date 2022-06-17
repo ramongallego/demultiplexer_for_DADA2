@@ -332,24 +332,24 @@ fi
 		"${SAMPLE_NAMES[i]}" >> "${SAMPLE_TRANS_FILE}"
 	done
 	for (( i=0; i < "${#ID1S[@]}"; i++ )); do
-	  printf "File1:%s\tFile2:%s\tLib:%s\n" \
-	  "${FILE1[i]}" "${FILE2[i]}" "${ID1S[i]}"
+	  printf "File1:%s\tLib:%s\n" \
+	  "${FILE1[i]}"  "${ID1S[i]}"
 
 
 	done
 	# Create the BARCODE FILE for nanopore
-	Barcodes_file="$OUTPUT_DIR"/barcodes.fasta
+	Barcodes_file_p5="$OUTPUT_DIR"/barcodes_P5.fasta
 
 
-	for (( i=0; i < "${#ID2_ALL[@]}"; i++ )); do
+	for (( i=0; i < "${#ID1_ALL[@]}"; i++ )); do
 
 
-	printf ">%s_%s\n%s"..."%s\n" \
-		"${ID1_ALL[i]}" "${ID2_ALL[i]}" \
-		"${ID1S_many[i]}" "${ID2_ALL_RC[i]}" >> "${Barcodes_file}"
+	printf ">%s\n%s\n" \
+		"${ID1_ALL[i]}" \
+		"${ID1S_many[i]}"  >> "${Barcodes_file_p5}"
 	done
 
-	head "${Barcodes_file}"
+	head "${Barcodes_file_p5}"
 
 # #Create the fasta file of the barcodes
 #
@@ -399,7 +399,7 @@ fi
 	##First cutdapt:
 
 
-	# Look for the reverse primer and if found, reverse the output
+	# Look for the fwd primer and if found on rc, reverse the output
 
 	cutadapt -g "${PRIMER1}" -o "${READ1}".new.fastq --quiet --action=none --rc -e 0.3 "${READ1}"
 
@@ -413,13 +413,11 @@ fi
 
   cat "${Barcodes_file}"
 
-	cutadapt -g file:"${Barcodes_file}" -o "${DEMULT_DIR}"/${FILE1[i]}/${FILE1[i]}-{name}_round1.fastq \
+	cutadapt -g file:"${Barcodes_file_p5}" -o "${DEMULT_DIR}"/${FILE1[i]}/${FILE1[i]}-{name}_round1.fastq \
 	 "${READ1}".new.fastq --quiet --discard-untrimmed -e 0.2 --rc
 
 
-	#This split each fastq into as fastqs as barcodes are
-	#but only looking at them on the .1 file -> do the same on the other file, and keep
-	#the order of reads similar in both files
+
 
 		n_files=("${DEMULT_DIR}"/"${FILE1[i]}"/*round1.fastq)
 
