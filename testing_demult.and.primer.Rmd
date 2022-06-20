@@ -1,0 +1,374 @@
+---
+title: "Dani amplicon"
+output: html_notebook
+params: 
+  output.folder:
+    value: /home/mk1b/Documents/test_demult/demultiplexed_20220610_1333/
+  
+---
+
+Get the demultiplexing from the  first step and join it with the metadata
+
+```{r}
+library (tidyverse)
+library (insect)
+library (GGally)
+```
+
+Get the metadata
+
+Pass the parameter to the system environment
+
+```{r}
+Sys.setenv(OUTPUTFOLDER = params$output.folder)
+```
+
+
+```{r}
+output_folder <- params$output.folder
+
+metadata <- read_csv(file.path(output_folder,"metadata.csv"))
+
+p7 <- read_delim("/home/mk1b/demultiplexer_for_DADA2/data_Dani/i7.txt")
+
+p7 %>% 
+  mutate (row = rep(LETTERS[1:8], 12),
+          col = rep(1:12, each =8)) %>% 
+  unite (row, col, col = "Well.p7", sep = "", remove = F) %>% 
+  select(Name.p7 = Name, Well.p7, row, col) %>% 
+  left_join(metadata, .) -> metadata
+
+
+```
+
+# Step 1 - get the number os seqs per step and file
+
+```{bash}
+
+cd "$OUTPUTFOLDER"
+
+wc -l demultiplexed/all.fastq/*.fastq > nlines.demult
+
+wc -l noprimers/all.fastq/*/all/*.fastq > nlines.noprimers 
+
+
+
+```
+
+
+Produce the first plot: success of demultiplexing
+
+```{r}
+nlines <- read_table2(file.path(output_folder, "nlines.demult"), col_names = c("lines", "file"))
+
+nlines %>% filter (!str_detect(file, "total")) -> nlines
+
+nlines %>% 
+  mutate(file = basename(file),
+         file = str_remove(file, "_round1.fastq")) -> nlines
+
+metadata %>% 
+  mutate(file = paste0(file,"-",Name.p5, "_", barcode.p7)) ->metadata
+
+nlines %>% 
+  left_join(metadata, by = "file") %>% 
+  mutate(Community = case_when(Well.p7 == "G12" ~ "Zymo",
+                               Well.p5 == "A2" & Well.p7=="B10" ~ "Zymolog" ))  %>% 
+  filter(!is.na(Community)) %>% 
+  select(file, barcode.p5, barcode.p7) %>% 
+  write_delim(file.path(output_folder,"zymo.tsv"))
+
+nlines %>% 
+  left_join(metadata) %>% 
+  ggplot (aes(x = col, y = row)) +
+  facet_wrap(facets = ~ plate_name.p5, nrow = 5) +
+  geom_tile(aes(fill= lines), color = "lightgrey") +
+  scale_fill_viridis_c() + 
+  scale_y_discrete(limits=rev) +
+  scale_x_continuous(breaks = 1:12)
+
+ggsave(file.path(output_folder, "heatmap_demultiplexed_reads.png"), width = 9, dpi = "retina")
+```
+
+And now the same, but scaled to each plate
+
+```{r}
+nlines %>% 
+  left_join(metadata) %>% 
+  group_by(plate_name.p5) %>% 
+  mutate (tot = sum(lines),
+          prop = 100*(lines /tot)) %>% 
+  ggplot (aes(x = col, y = row, fill = prop)) +
+  
+
+
+  facet_wrap(facets = ~ plate_name.p5, nrow = 5) +
+  geom_tile( color = "lightgrey") +
+  scale_fill_viridis_c() + 
+  scale_y_discrete(limits=rev) +
+  scale_x_continuous(breaks = 1:12)
+
+ggsave(file.path(output_folder, "heatmap_demultiplexed_reads_scaled.png"), width = 9, dpi = "retina")
+```
+## What about after finding the primers?
+
+```{r}
+nlines <- read_table2(file.path(output_folder, "nlines.noprimers"), col_names = c("lines", "file"))
+
+nlines %>% filter (!str_detect(file, "total")) -> nlines
+
+nlines %>% 
+  mutate(file = basename(file),
+         file = str_remove(file, "_16S_long.fastq")) -> nlines
+
+
+nlines %>% 
+  inner_join(metadata) %>% 
+  group_by(plate_name.p5) %>% 
+  mutate (tot = sum(lines),
+          prop = 100*(lines /tot)) %>% 
+  ggplot (aes(x = col, y = row, fill = prop)) +
+  facet_wrap(facets = ~ plate_name.p5, nrow = 5) +
+  geom_tile(aes(fill= prop), color = "lightgrey") +
+  scale_fill_viridis_c() + 
+  scale_y_discrete(limits=rev) +
+  scale_x_continuous(breaks = 1:12)
+
+ggsave(file.path(output_folder, "heatmap_no_primers_proportions.png"), width = 9, dpi = "retina")
+
+
+```
+NUmber of ASVs  and reads per sample
+
+
+
+
+```{r}
+nlines %>% 
+  inner_join(metadata) %>% 
+  ggplot (aes(x = col, y = row)) +
+  facet_wrap(facets = ~ plate_name.p5, nrow = 5) +
+  geom_tile(aes(fill= lines), color = "lightgrey") +
+  scale_fill_viridis_c() + 
+  scale_y_discrete(limits=rev) +
+  scale_x_continuous(breaks = 1:12)
+
+ggsave(file.path(output_folder, "heatmap_no_primers_reads.png"), width = 9, dpi = "retina")
+
+
+```
+
+```{r}
+ASV_table <- read_csv(file.path(output_folder, "ASV_table.csv"))
+
+ASV_table %>% 
+  inner_join(metadata, by = c("Sample" = "file")) %>% 
+  group_by(Sample, col, row, plate_name.p5) %>% 
+  summarise (nReads = sum(nReads),
+             nHash = n_distinct(Hash)) %>% 
+  ggplot (aes(x = col, y = row)) +
+  facet_wrap(facets = ~ plate_name.p5, nrow = 5) +
+  geom_point(aes(fill= nReads, size = nHash), color = "lightgrey", shape = 21) +
+  scale_fill_viridis_c() + 
+  scale_y_discrete(limits=rev) +
+  scale_x_continuous(breaks = 1:12)
+
+ggsave(file.path(output_folder, "heatmap_ASVs.png"), width = 9, dpi = "retina")
+```
+
+## what about the lengths
+
+We now that the sequences we produced should be of a certain lengths. Does each step (demultiplexing, removing primers) affect the length of the resulting sequences?
+
+We will use 'awk' to generate a tab file with the lengths of each sequence.
+
+
+```{bash}
+
+cd /data/minknow/data/Run003_20220520_longAmplicons/no_sample/20220520_1400_MN40189_FAT20945_29cfc02a/fast5_pass/fastq_sup/pass
+
+ awk 'NR%4==2 {print f,length}{f=$1}' all.fastq > "$OUTPUTFOLDER"/seq.lengths.init
+ 
+cd "$OUTPUTFOLDER"/demultiplexed/all.fastq
+
+for file in *.fastq; do awk -v VARIABLE=$file 'NR%4==2 {print f,length, VARIABLE } {f=$1}' $file >> "$OUTPUTFOLDER"/seq.lengths.demult.with.primer ; done
+
+cd "$OUTPUTFOLDER"/demult.no.primer
+
+for file in *.fastq; do awk -v VARIABLE=$file 'NR%4==2 {print f,length, VARIABLE } {f=$1}' $file >> "$OUTPUTFOLDER"/seq.lengths.demult.no.primer ; done
+
+cd "$OUTPUTFOLDER"/noprimers/all.fastq
+
+for file in all.fastq-P5-UDP00*/all/*16S_long.fastq; do awk -v VARIABLE=$file 'NR%4==2 {print f,length, VARIABLE } {f=$1}' $file >> "$OUTPUTFOLDER"/seq.lengths.demult.primer.removed ; done
+```
+
+## Capture all seq lengths
+
+
+```{r}
+
+
+original.lengths <- read_table2(file.path(output_folder, "seq.lengths.init"), col_names = c("seq","length.init"))
+
+demult.lengths.with.primer <- read_table2(file.path(output_folder, "seq.lengths.demult.with.primer"), col_names = c("seq","length.demult", "file")) %>% mutate(file = str_remove(file, "_round1.fastq"),
+                                                                                                                                                              file = str_remove(file, "all.fastq-"))
+
+demult.lengths.no.primer.found <- read_table(file.path(output_folder, "seq.lengths.demult.no.primer"), col_names = c("seq","length.demult", "file"))%>% mutate(file = str_remove(file, "_round2.fastq"))
+
+demult.lengths.primer.removed <- read_table(file.path(output_folder, "seq.lengths.demult.primer.removed"), col_names = c("seq","length.amplicon", "file")) %>% 
+  mutate(file = basename(file),
+         file = str_remove(file, "_16S_long.fastq"),
+                                                                                                                                                              file = str_remove(file, "all.fastq-")) 
+
+
+left_join(demult.lengths.with.primer, demult.lengths.primer.removed) %>% 
+  bind_rows(demult.lengths.no.primer.found ) 
+%>% 
+  right_join(original.lengths) -> all.lengths
+
+## Add well info so we can play
+p7 %>% 
+  mutate (row = rep(LETTERS[1:8], 12),
+          col = rep(1:12, each =8)) %>% 
+  unite (row, col, col = "Well.p7", sep = "") %>% 
+  select(Well.p7, barcode) -> barcodes
+
+
+all.lengths %>%
+  separate(file , into= c("plate", "barcode"), sep ="_", remove = F) %>% 
+  left_join(barcodes) -> all.lengths
+
+all.lengths %>% 
+  pivot_longer(cols = starts_with("length"),
+               names_to = "Step",
+              names_prefix = "length.",
+              values_to = "length") %>% 
+  ggplot(aes(x =length, after_stat(count), color = Step, fill = Step)) +
+  geom_density( position  = "stack") +
+  # facet_wrap(~plate, scales = "free_y")+
+  scale_x_continuous(limits = c(0,1800))
+  
+all.lengths %>% 
+ggplot(aes(length.init)) +
+  geom_density() +
+  facet_wrap(~plate)+
+  scale_x_continuous(limits = c(0,1800)) +
+  ggtitle("Seq lengths to begin with")
+
+ggsave(file.path(output_folder, "seqlengths.png"), dpi = "retina", width = 9)
+
+all.lengths %>% 
+  filter (!is.na(plate)) %>% 
+  ggplot(aes(length.demult)) +
+  geom_density() +
+  facet_wrap(~plate)+
+  scale_x_continuous(limits = c(0,1800)) +
+  ggtitle("Seq lengths after demultiplexing")
+
+ggsave(file.path(output_folder, "seqlengths.after.demult.png"), dpi = "retina", width = 9)
+
+all.lengths %>% 
+  filter (!is.na(plate)) %>% 
+  mutate(veredict = case_when(length.init < 500 ~ "Short Read",
+                              length.demult < 1000 ~ "Misplaced barcode",
+                              TRUE                ~ "All good")) %>%
+  ggplot(aes(length.demult)) +
+  geom_density(aes(fill = veredict)) +
+  facet_wrap(~plate)+
+  scale_x_continuous(limits = c(0,1800)) +
+  ggtitle("Seq lengths after demultiplexing")
+
+ggsave(file.path(output_folder, "seqlengths.after.demult.by.criteria.png"), dpi = "retina", width = 9)
+
+all.lengths %>% 
+  filter (!is.na(plate)) %>% 
+  ggplot(aes(length.amplicon)) +
+  geom_density() +
+  facet_wrap(~plate)+
+  scale_x_continuous(limits = c(0,1800)) +
+  ggtitle("Seq lengths after demultiplexing and removing primers")
+
+ggsave(file.path(output_folder, "seq.lengths.after.demult.and.primer.png"), dpi ="retina", width = 9)
+
+all.lengths %>% 
+  filter (!is.na(plate)) %>% 
+  mutate(veredict = case_when(length.init < 500 ~ "Short Read",
+                              length.demult < 1000 ~ "Misplaced barcode",
+                              TRUE                ~ "All good")) %>% 
+  ggplot (aes(length.amplicon)) +
+  geom_histogram(binwidth = 150, aes(fill = veredict)) +
+  facet_wrap(~plate)+
+  ggtitle("Seq lengths by success in demult - primer")
+
+ggsave(file.path(output_folder, "seqlengths.by.success.png"), dpi = "retina", width = 9)
+```
+
+
+
+```{r}
+all.files.no.demult <-tibble (path = list.files("/home/mk1b/Documents/test_demult/demultiplexed_20220610_1333/demult.no.primer/", pattern = ".fastq", full.names = T),
+                              file = list.files("/home/mk1b/Documents/test_demult/demultiplexed_20220610_1333/demult.no.primer/", pattern = ".fastq", full.names = F)) %>% 
+  group_by(path) %>% 
+  mutate (seqs = map(path, ~ readFASTQ(.x, bin = F)),
+          lengths = map (seqs, str_length)) %>% 
+  ungroup() %>% 
+  select(file, lengths) %>% 
+  unnest(lengths) 
+
+all.files.no.demult%>% 
+  mutate(file = str_remove(file, "_round2.fastq")) %>% 
+  inner_join(metadata ) %>% 
+  ggplot(aes(lengths)) +
+  geom_histogram(aes(fill = plate_name.p5))+
+  facet_wrap(~plate_name.p5) +
+  guides(fill = "none") +
+  scale_x_continuous(limits = c(0, 1900))
+```
+
+
+
+## Get two plots 
+
+One is the number of sequences per well, both at the demultiplexing step, and after primer trimming
+
+```{r}
+metadata %>% 
+  separate(Well.p7, into = c("Row", "Column"), sep = 1, convert = T, remove = F) %>% 
+  ggplot (aes(x = Column, y = Row)) +
+  facet_wrap(facets = ~ plate_name.p5, nrow = 2) +
+  geom_raster(aes(fill= lines)) +
+  scale_fill_viridis_c() + 
+  scale_y_discrete(limits=rev) +
+  scale_x_discrete()
+
+
+metadata %>% 
+  separate(Well.p7, into = c("Row", "Column"), sep = 1, convert = T, remove = F) %>% 
+  group_by(Well.p5) %>% 
+  mutate(sum = sum(lines),
+         prop.lines = 100*(lines/sum)) %>% 
+  ggplot (aes(x = Column, y = Row)) +
+  facet_wrap(facets = ~ plate_name.p5, nrow = 2) +
+  
+  geom_raster(aes(fill= prop.lines)) +
+  geom_text(aes(label = Well.p7)) +
+  scale_fill_viridis_c() + 
+  scale_y_discrete(limits=rev) +
+  scale_x_discrete() +
+  theme(axis.text.x.bottom = element_text())
+
+ggsave("over.represented.png", dpi = "retina", width = 21)
+  
+```
+
+
+```{r}
+local.folder <- "/data/minknow/data/Run003_20220520_longAmplicons/no_sample/20220520_1400_MN40189_FAT20945_29cfc02a/fast5_pass/fastq_sup/pass"
+masked.fwd <- tibble(seqs =readFASTQ(file = file.path(local.folder, "all.new.fastq"), bin = F))
+
+masked.fwd %>% 
+  mutate(str_length(seqs))
+```
+
+## Generate read lengths per seq
+
