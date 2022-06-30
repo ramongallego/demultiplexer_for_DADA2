@@ -34,7 +34,7 @@ COLNAME_SAMPLE_ID="sample_id"
 
 # Your metadata must have a column corresponding to the subfolders containing the raw reads.
 # In order to make this flexible across both multiple and single library preps, you must include this even if you only sequenced one library (sorry!).
-COLNAME_ID1_NAME="Name.p5"
+COLNAME_ID1_NAME="plate_name.p5"
 COLNAME_ID1_SEQ="barcode.p5"
 
 #COLNAME_INSERT_SIZE="insert_size"
@@ -65,6 +65,7 @@ SECONDARY_INDEX="YES"
 # these are the secondary index -- the primary index added with the sequencing adapters should not be in the sequence data
 # You can grab these from the file specified above (SEQUENCING_METADATA) by specifying the column name of index sequences.
 COLNAME_ID2_SEQ="barcode.p7"
+COLNAME_ID2_WELL="Well.p7"
 
 # How many nucleotides pad the 5' end of the tag sequence?
 # TODO build in flexibility (this number is unused right now)

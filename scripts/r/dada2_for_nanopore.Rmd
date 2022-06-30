@@ -1,0 +1,302 @@
+---
+title: "Dada2_report"
+author: "Ramón Gallego"
+date: "1/9/2018"
+output: html_document
+params:
+  folder:
+    value: x
+  hash:
+    value: y
+  cont:
+    value: z
+  fastqs:
+    value: a
+  original:
+    value: b
+
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir=params$folder)
+```
+
+## Dada2 report
+
+You have successfully split your libraries into a fastq file per sample and primer. Now let's import the output of the pipeline and run dada2
+
+First load the packages. And let's update the parameters we need
+```{r loading packages, echo=FALSE ,message=FALSE}
+library (devtools)
+library (tidyverse)
+library (stringr)
+library (dada2)
+library (Biostrings)
+library (digest)
+
+#fastq.folder="/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180108_1539"
+# sample.map <- read_delim(paste0(params$folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
+# head (sample.map)
+
+path1 <- params$fastqs
+#params$original[1]
+#Sys.setenv(READ1=params$original[1])
+
+```
+Firstly, we'll find the patterns that separate our Fwd, Rev, .1 and .2 files. look at the quality of the .1 and .2 reads
+```{r listing files}
+# list all original fastq files
+
+original.file <- list.dirs(path = file.path(path1, "noprimers"), recursive = F, full.names = T)
+
+
+
+F1s <- sort(list.files(path= original.file, pattern= "*.fastq" , full.names = T, recursive = F))
+
+F1s
+
+
+
+
+# Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
+sample.names <- str_replace(basename(F1s), ".fastq","")
+
+
+# Introduce here the biological counterpart of the fastq file
+
+real.sample.name <- sample.map[,3][match(good.sample.names,sample.map$fastq_header),1]
+
+
+
+```
+
+A nice idea is to plot the Quality of the F1 reads
+
+```{r qplot1, echo=FALSE}
+plotQualityProfile(F1s[2])
+```
+
+
+## Now start with the trimming of each read based on the quality we just plotted
+```{r filter and trim}
+filt_path <- file.path(path1, "/filtered") # Place filtered files in filtered/ subdirectory
+filtF1s <- file.path(filt_path, paste0(sample.names, "_F1_filt.fastq.gz"))
+
+out_Fs <- filterAndTrim(F1s, filtF1s, rm.phix=F,
+                      compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
+
+
+```
+
+
+```{r as tibble}
+out_Fs_tibble<-tibble(file=dimnames(out_Fs)[[1]], reads.in = out_Fs[,1], reads.out=out_Fs[,2])
+
+out_Fs_tibble
+
+## Keep only those passing filters
+
+out_Fs_tibble %>% 
+  filter (reads.out>10) %>% 
+  pull(file) -> passing.filter
+
+
+filtF1s.passing <- file.path(filt_path, str_replace(passing.filter, ".fastq", "_F1_filt.fastq.gz"))
+
+```
+
+Now the first crucial step: learning the error rates 
+
+```{r learning errors, echo=T}
+errF1 <- learnErrors(filtF1s.passing, multithread=TRUE,verbose = 0)
+
+
+# Write errors to csv to see if they matter at all
+
+
+saveRDS(errF1, file = "all.errors.rds")
+
+```
+
+Which we can plot now to see the error rates between transitions of each pair of nt
+```{r plotErrors}
+
+plotErrors(errF1, nominalQ = T)
+
+
+```
+
+## Now go to the dereplication step
+
+```{r dereplication, echo=F,message=FALSE}
+derepF1s <- derepFastq(filtF1s.passing, verbose=TRUE)
+
+names(derepF1s)
+
+
+```
+
+## And finally an inference of the sample composition
+
+```{r dadaing, message=FALSE}
+dadaF1s <- dada(derepF1s, err = errF1, multithread = TRUE)
+
+
+```
+
+## We are ready now to merge reads - using the denoised reads and the derep files.
+We will start by saving all files to disk.
+```{r saving to disk}
+tosave <- list(derepF1s,  dadaF1s)
+
+   saveRDS(tosave, file = "tosave.rds")
+
+
+```
+The pipeline breaks if for some reason there are samples that don't have any reads passing filters
+(or at least that is the current hypothesis)
+
+
+
+Step 1 is to create sequence tables for each direction, seqtabF and seqtabR
+```{r Table the results}
+
+seqtabF <- makeSequenceTable(dadaF1s)
+
+dim(seqtabF)
+
+table(nchar(getSequences(seqtabF)))
+
+
+```
+
+
+
+## Now get rid of the chimeras - although it would be good to try vsearch chimera detecting tool
+
+```{r RemovingChimeras, message=F}
+
+seqtab.nochim <- removeBimeraDenovo(seqtabF, method="consensus", multithread=TRUE)
+
+dim(seqtab.nochim)
+
+
+```
+
+
+
+## IF selected, proceed with Hashing: create a hash conversion table and saving files in tidyr format
+
+We are going to keep the info in a tidyr format and save it into a csv file
+```{r tidying and writing}
+
+seqtab.nochim.df=as.data.frame(seqtab.nochim)
+
+ASV.file <- file.path(path1, "ASV_table_dada.csv")
+
+# Now decide if you want hashing or not
+
+if (grepl ("yes", params$hash, ignore.case = TRUE)) {
+
+  conv_file <-  file.path(path1,"hash_key_dada.csv")
+
+  conv_table <- tibble( Hash = "", Sequence ="")
+
+  #hashes <- list(NULL)
+  
+  map_chr (colnames(seqtab.nochim.df), ~ digest(.x, algo = "sha1", serialize = F, skip = "auto")) -> Hashes
+  conv_table <- tibble (Hash = Hashes,
+                        Sequence = colnames(seqtab.nochim.df))
+  
+  colnames(seqtab.nochim.df) <- Hashes
+
+  # for (i in 1:ncol(seqtab.nochim.df)) {   #for each column of the dataframe
+  # 
+  #   current_seq <-colnames(seqtab.nochim.df)[i]
+  # 
+  #   current_hash <- digest(current_seq,algo = "sha1",serialize = F,skip = "auto")
+  # 
+  #   hashes[[i]] <-  current_hash
+  # 
+  #   conv_table [i,]<-c(current_hash, current_seq)
+  # 
+  #   colnames(seqtab.nochim.df)[i] <- current_hash
+  # 
+  # }
+
+  write_csv(conv_table, conv_file)
+
+
+seqtab.nochim.df %>%
+  rownames_to_column("sample") %>%
+  pivot_longer(-sample, names_to="Hash", values_to = "nReads") %>%
+  filter (nReads > 0) -> current_asv
+
+write_csv(current_asv, ASV.file)
+
+} else { #What do we do if you don't want hashes: two things - Change the header of the ASV table, write only one file
+
+  seqtab.nochim.df %>%
+  rownames_to_column("sample") %>%
+  pivot_longer(-sample, names_to="Sequence", values_to = "nReads") %>%
+  filter (nReads > 0) ->  current_asv
+  write_csv(current_asv, ASV.file)
+}
+
+
+```
+
+##Track the fate of all reads
+```{r output_summary}
+
+getN <- function(x) sum(getUniques(x))
+
+
+track <- as.data.frame(cbind(out_Fs, 
+                             sapply(dadaF1s, getN), 
+                             rowSums(seqtabF),
+                             rowSums(seqtab.nochim)))
+# If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
+colnames(track) <- c("input_F", "filtered_F",
+                     "denoised_F", 
+                     "tabled_F", 
+                     "nonchim")
+
+write_csv(track, paste0(params$folder,"/dada2_summary.csv"))
+
+```
+
+## Merge with a previous analysis if selected
+
+If we have chosen to merge our dataset with a previous run, we need to gather that info, and merge properly both datasets.
+```{r merging with previous datasets}
+
+if (grepl ("yes", params$cont[1], ignore.case = TRUE)) {
+
+old_hash = read_csv(params$cont[2])
+
+old_asv = read_csv(params$cont[3])
+
+all_hash = union_all(old_hash, conv_table)
+
+new.hashes = setdiff(conv_table,old_hash)
+
+reads.new.hashes <- left_join(new.hashes, current_asv, by = c("Hash" = "Sequence"))
+
+all_asv = bind_rows (old_asv, current_asv)
+
+merging.output = tibble(Date = Sys.Date(), Old_db = params$cont[2], Old_ASV = params$cont[3],
+                        Input_folder= params$folder, Nseq_old_db = nrow(old_hash), Nseq_new_input = nrow(conv_table),
+                        Nseq_new_db = nrow(all_hash), N_newseq = nrow(new.hashes), Nreads_newseq = sum(reads.new.hashes$nReads) )
+ifelse(file.exists(params$cont[4]),
+       write_csv(merging.output, params$cont[4], append = T),
+       write_csv(merging.output, params$cont[4]) )
+
+write_csv(all_hash, paste0(params$folder, "/Hash_db_",Sys.Date(),".csv"))
+write_csv(all_asv, paste0(params$folder, "/ASV_all_",Sys.Date(),".csv"))
+
+}
+
+```

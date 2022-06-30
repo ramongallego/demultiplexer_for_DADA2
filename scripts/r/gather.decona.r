@@ -16,22 +16,35 @@ args[1]
 
 original.file <- list.dirs(path = file.path(args[1], "noprimers"), recursive = F, full.names = T)
 
-# get the sample_trans  
+# list all plates
 
-trans.map <-read_delim(file.path(args[1], "sample_trans.tmp"), 
-                       delim = ";", escape_double = FALSE, col_names = c("Name.p5", "barcode.p7"), 
-                       trim_ws = TRUE)
+original.plates <- map(original.file, ~ list.dirs(path = file.path(.x), recursive = F, full.names = T))
+
+# list all wells
+
+original.wells <- map(original.plates, ~ list.dirs(path = file.path(.x), recursive = F, full.names = T))
+
+# get the metadata 
+
+# trans.map <-read_delim(file.path(args[1], "sample_trans.tmp"), 
+#                        delim = ";", escape_double = FALSE, col_names = c("Name.p5", "barcode.p7"), 
+#                        trim_ws = TRUE)
+
 metadata <- read_csv(file.path(args[1], "metadata.csv"))
 
-# get the number of good outputs
-all.outputs <- list.dirs(original.file, recursive = F, full.names = T)
+tibble (Full.paths =  flatten(original.wells)) %>% 
+  unnest() %>% 
+  separate(Full.paths, into = c(NA, "file"), remove = F, sep = "noprimers/") %>% 
+  separate(file, into = c("original.fastq", "Plate", "Well"), sep = "/") %>% 
+  filter (!Well %in% c("pcr","barcodes")) -> all.files
+  
 
 # How many did get  a medaka consensus
 
 check.medaka <- function(folder){
   
-  ifelse(file.exists(file.path(folder, "all", "multi-seq", "all_medaka_fastas.fasta" )),
-     folder,
+  ifelse(file.exists(file.path(folder,  "multi-seq", "all_medaka_fastas.fasta" )),
+     T,
      F)
   
   
@@ -39,14 +52,20 @@ check.medaka <- function(folder){
 
 # Work only on those who made it through
 
-map(all.outputs, check.medaka) %>% 
-  set_names(nm = list.dirs(original.file, recursive = F, full.names = F)) %>% 
-  purrr::discard(is.logical) -> passing.medaka
+all.files %>% 
+  mutate(worked = map_lgl(Full.paths, check.medaka)) %>% 
+  filter (worked) -> passing.medaka 
+
+
+
+# map(all.outputs, check.medaka) %>% 
+#   set_names(nm = list.dirs(original.file, recursive = F, full.names = F)) %>% 
+#   purrr::discard(is.logical) -> passing.medaka
 
 # For each of them , get the medaka consensus, extract the nreads
 
 read.consensus <- function(folder){
-  temp <- insect::readFASTA(file.path(folder, "all", "multi-seq", "all_medaka_fastas.fasta" ),
+  temp <- insect::readFASTA(file.path(folder, "multi-seq", "all_medaka_fastas.fasta" ),
                     bin = F)
   tibble (old.names = names(temp),
           seq = temp) %>% 
@@ -62,11 +81,16 @@ read.consensus <- function(folder){
   #              "Hash_key" = temp %>% select(Hash, seq)))
     return(temp)
 }
-map (passing.medaka, read.consensus) %>% 
-  bind_rows(.id = "Sample") -> all.together
+passing.medaka %>% 
+  mutate(all.consensus = map (Full.paths, read.consensus)) -> passing.medaka
+
+passing.medaka %>% 
+  select(original.fastq, Well, all.consensus) %>% 
+  unnest(all.consensus)-> all.together
 
 all.together %>% 
   ungroup %>% 
+  unite(original.fastq, Well, col = "Sample", sep = "_Plate_") %>% 
   select(Sample, Hash, nReads) %>% 
   write_csv(file = file.path(args[1], "ASV_table.csv"))
 
