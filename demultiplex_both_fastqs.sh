@@ -367,8 +367,9 @@ fi
 
 		n_files=("${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.2.fastq)
  # print list of reverse FILES
+ echo "trying here"
  echo "${n_files[@]}"
- 
+
 		i_count=0
 
 	 for file in "${n_files[@]}"; do
