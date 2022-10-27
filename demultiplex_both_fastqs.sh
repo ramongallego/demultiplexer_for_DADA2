@@ -492,8 +492,8 @@ fi
 		"${short_NEW_OUTPUT_Fwd_1}" "${nseq_NOF1}" \
 	  "${short_NEW_OUTPUT_Rev_1}" "${nseq_NOR1}" >> "${OUTPUT_SUMMARY}"
 	  # now clean the middle FILES - checking first if they do exist
-	  rm "${file}"
-	  rm "${r1file}"
+	#  rm "${file}"
+	 # rm "${r1file}"
 		if [[ -s "${MID_OUTPUT1}" ]]; then
 			rm "${MID_OUTPUT1}"
 			rm "${MID_OUTPUT2}"
