@@ -1,7 +1,7 @@
 ---
 title: "Dada2_report"
-author: "Ramón Gallego"
-date: "1/9/2018"
+author: "Belen01"
+date: ""
 output: html_document
 params:
   folder:
@@ -94,13 +94,13 @@ plotQualityProfile(F2sgood[1:4])
 filt_path <- file.path(params$folder, "/filtered") # Place filtered files in filtered/ subdirectory
 filtF1s <- file.path(filt_path, paste0(good.sample.names, "_F1_filt.fastq.gz"))
 filtF2s <- file.path(filt_path, paste0(good.sample.names, "_F2_filt.fastq.gz"))
-out_Fs <- filterAndTrim(F1sgood, filtF1s, F2sgood, filtF2s, truncLen=c(200,200),
+out_Fs <- filterAndTrim(F1sgood, filtF1s, F2sgood, filtF2s, truncLen=c(240,180),
                       maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
 
 filtR1s <- file.path(filt_path, paste0(good.sample.names, "_R1_filt.fastq.gz"))
 filtR2s <- file.path(filt_path, paste0(good.sample.names, "_R2_filt.fastq.gz"))
-out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(200,200),
+out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(240,180),
                       maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE)
 ```
@@ -329,25 +329,25 @@ if (grepl ("yes", params$hash, ignore.case = TRUE)) {
   conv_table <- tibble( Hash = "", Sequence ="")
 
   #hashes <- list(NULL)
-  
+
   map_chr (colnames(seqtab.nochim.df), ~ digest(.x, algo = "sha1", serialize = F, skip = "auto")) -> Hashes
   conv_table <- tibble (Hash = Hashes,
                         Sequence = colnames(seqtab.nochim.df))
-  
+
   colnames(seqtab.nochim.df) <- Hashes
 
   # for (i in 1:ncol(seqtab.nochim.df)) {   #for each column of the dataframe
-  # 
+  #
   #   current_seq <-colnames(seqtab.nochim.df)[i]
-  # 
+  #
   #   current_hash <- digest(current_seq,algo = "sha1",serialize = F,skip = "auto")
-  # 
+  #
   #   hashes[[i]] <-  current_hash
-  # 
+  #
   #   conv_table [i,]<-c(current_hash, current_seq)
-  # 
+  #
   #   colnames(seqtab.nochim.df)[i] <- current_hash
-  # 
+  #
   # }
 
   write_csv(conv_table, conv_file)

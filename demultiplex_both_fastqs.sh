@@ -98,13 +98,13 @@ COLNUM_FILE2=$( get_colnum "${COLNAME_FILE2}" "${SEQUENCING_METADATA}")
 # Library names
 COLNUM_ID1=$( get_colnum "${COLNAME_ID1_NAME}" "${SEQUENCING_METADATA}")
 
-COLNUM_ID1_SEQ=$( get_colnum "${COLNAME_ID1_SEQ}" "${SEQUENCING_METADATA}")
+#COLNUM_ID1_SEQ=$( get_colnum "${COLNAME_ID1_SEQ}" "${SEQUENCING_METADATA}")
 
 # Secondary indices
 COLNUM_ID2=$( get_colnum "${COLNAME_ID2_SEQ}" "${SEQUENCING_METADATA}")
 
 # Secondary index sequence positions
-COLNUM_ID2_START=$( get_colnum "${COLNAME_ID2_START}" "${SEQUENCING_METADATA}")
+#COLNUM_ID2_START=$( get_colnum "${COLNAME_ID2_START}" "${SEQUENCING_METADATA}")
 
 # Sample names
 COLNUM_SAMPLE=$( get_colnum "${COLNAME_SAMPLE_ID}" "${SEQUENCING_METADATA}")
@@ -115,8 +115,8 @@ COLNUM_PRIMER2=$( get_colnum "${COLNAME_PRIMER2}" "${SEQUENCING_METADATA}")
 
 # Run away from the script if any of the previous columns was not found
 
-all_columns=( COLNUM_FILE1 COLNUM_FILE2 COLNUM_ID1 COLNUM_ID1_SEQ COLNUM_ID2 \
-COLNUM_ID2_START COLNUM_SAMPLE COLNUM_PRIMER1 COLNUM_PRIMER2)
+all_columns=( COLNUM_FILE1 COLNUM_FILE2 COLNUM_ID1 COLNUM_ID2 \
+ COLNUM_SAMPLE COLNUM_PRIMER1 COLNUM_PRIMER2)
 
 echo "Checking that all columns in metadata are there"
 
@@ -203,9 +203,11 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 		  sort | uniq))
 		N_index_sequences="${#ID2S[@]}"
 		ID2_LENGTH=${#ID2S[0]}
-		ID2_START=($(awk -F',' -v COLNUM=$COLNUM_ID2_START \
-		  'NR>1 {  print $COLNUM }' $SEQUENCING_METADATA |\
-		  sort | uniq))
+
+# Change this section so we don't start the same tag at the same spto. rememmber the N
+	#	ID2_START=($(awk -F',' -v COLNUM=$COLNUM_ID2_START \
+	#	  'NR>1 {  print $COLNUM }' $SEQUENCING_METADATA |\
+	#	  sort | uniq))
 
 		# check if number of indexes is greater than one:
 		if [[ "${N_index_sequences}" -gt 1 ]]; then
@@ -310,7 +312,7 @@ fi
 
 	Barcodes_file="$OUTPUT_DIR"/barcodes.fasta
 	for (( i=0; i < "${#ID2S[@]}"; i++ )); do
-	  printf ">%s\n^NNN%s\n" \
+	  printf ">%s\n^%s\n" \
 		"${ID2S[i]}" "${ID2S[i]}" >> "${Barcodes_file}"
 	done
 
@@ -354,8 +356,8 @@ fi
 	##First cutdapt:
 	#TODO: use only the number of barcodes used for this Library
 
-
-	cutadapt -g file:"${Barcodes_file}" -o "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.1.fastq -p "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.2.fastq \
+## MODIFY: output filename so the barcode name is easily found
+	cutadapt -g file:"${Barcodes_file}" -o "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}_round1{name}_round1.1.fastq -p "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}_round1{name}_round1.2.fastq \
 	 "${READ1}" "${READ2}" --quiet --discard-untrimmed
 
 
@@ -373,15 +375,17 @@ fi
  #The barcode detected on the .1 is written in the name, so we now look
  #for that barcode at the beggining of the .2 read
 
-		RIGHT_BARCODE=$(echo ${file} | awk '/_round1/ {
-	    match($0, /_round1/); print substr($0, RSTART - 6, 6);
-	    }')
+
+### Modify this so it looks for the right number of characters:ok done
+		RIGHT_BARCODE=$(echo ${file} |  awk 'BEGIN {FS="_round1"}; {print $2}')
 
 			short_file=$(basename "${file}")
 
 		r1file=$(echo ${file} | sed 's/.2.fastq/.1.fastq/g' )
 		 	short_r1file=$(basename "${r1file}") # .1.fastq
-	  MID_OUTPUT1="${OUTPUT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_mid.1.fastq
+
+## Output name cutadapt round2
+		MID_OUTPUT1="${OUTPUT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_mid.1.fastq
 			short_MID_OUTPUT1=$(basename "${MID_OUTPUT1}") #double trimmed
 	  MID_OUTPUT2="${OUTPUT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_mid.2.fastq #double trimmed
 			short_MID_OUTPUT2=$(basename "${MID_OUTPUT2}")
@@ -414,7 +418,7 @@ fi
 	  #echo ${RIGHT_BARCODE}
 
 # try to make cutadapt quieter
-	  cutadapt -g ^NNN"${RIGHT_BARCODE}" -o "${MID_OUTPUT2}" \
+	  cutadapt -g "${RIGHT_BARCODE}" -o "${MID_OUTPUT2}" \
 	  -p "${MID_OUTPUT1}" "${file}" "${r1file}" --quiet --discard-untrimmed 2>> "${LOGFILE}"
 
 	  nseq_s2r1file=$(cat "${MID_OUTPUT1}" |  wc -l)
