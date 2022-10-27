@@ -358,7 +358,7 @@ fi
 
 ## MODIFY: output filename so the barcode name is easily found
 	cutadapt -g file:"${Barcodes_file}" -o "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}_round1{name}_round1.1.fastq -p "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}_round1{name}_round1.2.fastq \
-	 "${READ1}" "${READ2}" --quiet --discard-untrimmed
+	 "${READ1}" "${READ2}"  --discard-untrimmed 2>> "${LOGFILE}"
 
 
 	#This split each pair of fastqs into as many pairs of fastqs as barcodes are
