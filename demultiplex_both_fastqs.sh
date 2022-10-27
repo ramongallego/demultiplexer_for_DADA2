@@ -508,7 +508,7 @@ fi
 		fi
 
 	  done
-	  rm -r "${OUTPUT_DIR}"/"${ID1S[i]}"
+	 # rm -r "${OUTPUT_DIR}"/"${ID1S[i]}"
 
 	done
 
