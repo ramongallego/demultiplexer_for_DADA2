@@ -429,7 +429,7 @@ echo "${RIGHT_BARCODE}"
 
 # try to make cutadapt quieter
 	  cutadapt -g "${RIGHT_BARCODE}" -o "${MID_OUTPUT2}" \
-	  -p "${MID_OUTPUT1}" "${file}" "${r1file}" --cores 16 --discard-untrimmed 2>> "${LOGFILE}"
+	  -p "${MID_OUTPUT1}" "${file}" "${r1file}" --quiet --cores 16 --discard-untrimmed 2>> "${LOGFILE}"
 
 	  nseq_s2r1file=$(cat "${MID_OUTPUT1}" |  wc -l)
 	  nseq_s2r2file=$(cat "${MID_OUTPUT2}" |  wc -l)
@@ -460,14 +460,14 @@ echo "${RIGHT_BARCODE}"
 	cutadapt -g file:"${primers_file}" --discard-untrimmed\
 	 -o "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.1.fastq \
 	 -p "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
-	 "${MID_OUTPUT1}" "${MID_OUTPUT2}" --cores 16 2>> "${LOGFILE}"
+	 "${MID_OUTPUT1}" "${MID_OUTPUT2}" --quiet --cores 16 2>> "${LOGFILE}"
 
 
 
 
 	#Now remove the rev primer at the beggining of the .2 for those READS
 	#in which we found the FWD primer at the beggining of .1
-	cutadapt -g "${PRIMER2}" --cores 16 --discard-untrimmed \
+	cutadapt -g "${PRIMER2}" --quiet --cores 16 --discard-untrimmed \
 	-o "${NEW_OUTPUT_Fwd_2}" \
 	-p "${NEW_OUTPUT_Fwd_1}" \
 	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
@@ -475,7 +475,7 @@ echo "${RIGHT_BARCODE}"
 
 	#Now do similarly for those in which we found rev at the beggining of .1
 
-	cutadapt -g "${PRIMER1}" --cores 16 --discard-untrimmed \
+	cutadapt -g "${PRIMER1}" --quiet --cores 16 --discard-untrimmed \
 	-o "${NEW_OUTPUT_Rev_2}" \
 	-p "${NEW_OUTPUT_Rev_1}" \
 	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
