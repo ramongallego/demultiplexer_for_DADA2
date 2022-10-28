@@ -116,21 +116,53 @@ out_Fs_tibble %>% write_csv("passing_filter.csv")
 Before claculating errors, it is best to remove samples that have 0 or few reads.
 
 ```{r removing samples 1}
+out_Fs_tibble %>% 
+  filter (reads.out > 20) %>% 
+  mutate (key = str_remove(file, "_Fwd.1.fastq")) %>% 
+  select(key)-> filt_Fs_good
 
-to.keep.F <- map_lgl(dadaF1s, ~(sum(.x$denoised) > 150)) # Which samples have more than 150 reads passing filters in the Fwd direction
-to.keep.R <- map_lgl(dadaR1s, ~(sum(.x$denoised) > 150)) #  Which samples have more than 150 reads passing filters in the Rev direction
+out_Rs_tibble %>% 
+  filter (reads.out > 20) %>% 
+  mutate (key = str_remove(file, "_Rev.1.fastq")) %>% 
+  select(key)-> filt_Rs_good
 
-to.keep <- (to.keep.F + to.keep.R) == 2 # Keep only those that pass boths filters
+## Select only those files in the lists above
+
+tibble(Filenames = filtF1s) %>% 
+  separate(Filenames, into = c(NA, "key"), sep = "/filtered/", remove = F ) %>% 
+  mutate (key = str_remove(key, "_F1_filt.fastq.gz")) %>% 
+  inner_join(filt_Fs_good) %>% 
+  pull(Filenames) -> filtF1s_good
+
+tibble(Filenames = filtF2s) %>% 
+  separate(Filenames, into = c(NA, "key"), sep = "/filtered/", remove = F ) %>% 
+  mutate (key = str_remove(key, "_F2_filt.fastq.gz")) %>% 
+  inner_join(filt_Fs_good) %>% 
+  pull(Filenames) -> filtF2s_good
+
+### Same for Rs
+tibble(Filenames = filtR1s) %>% 
+  separate(Filenames, into = c(NA, "key"), sep = "/filtered/", remove = F ) %>% 
+  mutate (key = str_remove(key, "_R1_filt.fastq.gz")) %>% 
+  inner_join(filt_Rs_good) %>% 
+  pull(Filenames) -> filtR1s_good
+
+tibble(Filenames = filtR2s) %>% 
+  separate(Filenames, into = c(NA, "key"), sep = "/filtered/", remove = F ) %>% 
+  mutate (key = str_remove(key, "_R2_filt.fastq.gz")) %>% 
+  inner_join(filt_Rs_good) %>% 
+  pull(Filenames) -> filtR2s_good
+
 ```
 
 
 Now the first crucial step: learning the error rates that would be different for fwd and rev reads
 
 ```{r learning errors, echo=T}
-errF1 <- learnErrors(filtF1s, multithread=TRUE,verbose = 0)
-errF2 <- learnErrors(filtF2s, multithread=TRUE,verbose = 0)
-errR1 <- learnErrors(filtR1s, multithread=TRUE,verbose = 0)
-errR2 <- learnErrors(filtR2s, multithread=TRUE,verbose = 0)
+errF1 <- learnErrors(filtF1s_good, multithread=TRUE,verbose = 0)
+errF2 <- learnErrors(filtF2s_good, multithread=TRUE,verbose = 0)
+errR1 <- learnErrors(filtR1s_good, multithread=TRUE,verbose = 0)
+errR2 <- learnErrors(filtR2s_good, multithread=TRUE,verbose = 0)
 
 # Write errors to csv to see if they matter at all
 tosave <- list(errF1, errF2, errR1, errR2)
@@ -153,15 +185,26 @@ plotErrors(errR2, nominalQ = T)
 ## Now go to the dereplication step
 
 ```{r dereplication, echo=F,message=FALSE}
-derepF1s <- derepFastq(filtF1s, verbose=TRUE)
-derepF2s <- derepFastq(filtF2s, verbose=TRUE)
-derepR1s <- derepFastq(filtR1s, verbose=TRUE)
-derepR2s <- derepFastq(filtR2s, verbose=TRUE)
+derepF1s <- derepFastq(filtF1s_good, verbose=TRUE)
+derepF2s <- derepFastq(filtF2s_good, verbose=TRUE)
+derepR1s <- derepFastq(filtR1s_good, verbose=TRUE)
+derepR2s <- derepFastq(filtR2s_good, verbose=TRUE)
 
 # Name the derep-class objects by the sample names
-rownames(out_Fs) <- names(derepF1s) <- names(derepF2s) <- real.sample.name$Sample
 
-rownames(out_Rs) <- names(derepR1s) <- names(derepR2s) <- real.sample.name$Sample
+rownames(out_Fs) <- real.sample.name$Sample
+
+filt_Fs_good %>% 
+  left_join(sample_map) -> filt_Fs_good 
+
+ names(derepF1s) <- names(derepF2s) <- filt_Fs_good$sample
+
+filt_Rs_good %>% 
+  left_join(sample_map) -> filt_Rs_good 
+
+rownames(out_Rs) <- real.sample.name$Sample
+
+ names(derepR1s) <- names(derepR2s) <- filt_Rs_good$sample
 
 ```
 
@@ -194,12 +237,12 @@ Let's try to subset only those samples with more than 1000 reads on each directi
 to.keep.F <- map_lgl(dadaF1s, ~(sum(.x$denoised) > 150)) # Which samples have more than 150 reads passing filters in the Fwd direction
 to.keep.R <- map_lgl(dadaR1s, ~(sum(.x$denoised) > 150)) #  Which samples have more than 150 reads passing filters in the Rev direction
 
-to.keep <- (to.keep.F + to.keep.R) == 2 # Keep only those that pass boths filters
+#to.keep <- (to.keep.F + to.keep.R) == 2 # Keep only those that pass boths filters
 
-mergersF <- mergePairs(dadaF1s[to.keep],
-   derepF1s[to.keep],
-   dadaF2s[to.keep],
-   derepF2s[to.keep],
+mergersF <- mergePairs(dadaF1s[to.keep.F],
+   derepF1s[to.keep.F],
+   dadaF2s[to.keep.F],
+   derepF2s[to.keep.F],
    verbose = 0)
 
 #Run a for loop that adds the number of unique reads that went into each ASV
@@ -216,10 +259,10 @@ for (j in 1:length(mergersF)){
 
 }
 
-mergersR <- mergePairs(dadaR1s[to.keep],
-   derepR1s[to.keep],
-   dadaR2s[to.keep],
-   derepR2s[to.keep],
+mergersR <- mergePairs(dadaR1s[to.keep.R],
+   derepR1s[to.keep.R],
+   dadaR2s[to.keep.R],
+   derepR2s[to.keep.R],
    verbose = 0)
 
 for (j in 1:length(mergersR)){
@@ -272,32 +315,55 @@ Step 3 does the actual merging and returns another sequence Table
 
 seqtab.R.df=as.data.frame(seqtabR)
 
-final.seqtab<-data.frame(row.names = rownames(seqtabF))
+seqtab.R.df %>% 
+  rownames_to_column("sample") %>% 
+  pivot_longer(-sample, names_to = "sequence", values_to = "nReads_R") -> seqtab.R.df
 
+seqtab.F.df=as.data.frame(seqtabF)
+seqtab.F.df %>% 
+  rownames_to_column("sample") %>% 
+  pivot_longer(-sample, names_to = "sequence", values_to = "nReads_F") -> seqtab.F.df
 
-for (i in 1:ncol(seqtabF)) {   #for each column of the first dataframe
-
-  current_seq<-colnames(seqtabF)[i]
-
-  if (current_seq %in% colnames(seqtab.R.df)) { # is that column present on the second df?
-
-    final.seqtab[,current_seq]<-seqtabF[,i] + seqtab.R.df[,current_seq] #if yes, the new df has the sum of reads
-
-    seqtab.R.df[,current_seq]<-NULL
-    #seqtab.R2.df<- seqtab.R2.df[,-current_seq] #we delete the column from the second df to speed up next search
-
-
-  } else {        # if the column is not present, then the new df is the value of the first df
-
-    final.seqtab[,current_seq] <- seqtabF[,i]
-
-  }
+full_join(seqtab.R.df, seqtab.F.df) %>% 
+  replace_na(list(nReads_R = 0, nReads_F = 0)) %>% 
+  group_by(sample,sequence ) %>% 
+  mutate(nReads = sum(nReads_R + nReads_F)) %>% 
+  select(sample, sequence, nReads)  %>% 
+  pivot_wider(id_cols = sample, names_from = sequence, values_from = nReads) -> full_df
 
 
 
-}
-# Now cbind both dataset
-final.seqtab <- as.matrix (cbind(final.seqtab,seqtab.R.df))
+final.seqtab <- full_df %>% 
+  ungroup() %>% 
+  select(-sample) %>% 
+  as.matrix()
+
+dimnames(final.seqtab)[[1]] <- full_df$sample
+
+# 
+# for (i in 1:ncol(seqtabF)) {   #for each column of the first dataframe
+# 
+#   current_seq<-colnames(seqtabF)[i]
+# 
+#   if (current_seq %in% colnames(seqtab.R.df)) { # is that column present on the second df?
+# 
+#     final.seqtab[,current_seq]<-seqtabF[,i] + seqtab.R.df[,current_seq] #if yes, the new df has the sum of reads
+# 
+#     seqtab.R.df[,current_seq]<-NULL
+#     #seqtab.R2.df<- seqtab.R2.df[,-current_seq] #we delete the column from the second df to speed up next search
+# 
+# 
+#   } else {        # if the column is not present, then the new df is the value of the first df
+# 
+#     final.seqtab[,current_seq] <- seqtabF[,i]
+# 
+#   }
+# 
+# 
+# 
+# }
+# # Now cbind both dataset
+# final.seqtab <- as.matrix (cbind(final.seqtab,seqtab.R.df))
 
 ```
 
@@ -404,35 +470,3 @@ write_csv(track, paste0(params$folder,"/dada2_summary.csv"))
 
 ```
 
-## Merge with a previous analysis if selected
-
-If we have chosen to merge our dataset with a previous run, we need to gather that info, and merge properly both datasets.
-```{r merging with previous datasets}
-
-if (grepl ("yes", params$cont[1], ignore.case = TRUE)) {
-
-old_hash = read_csv(params$cont[2])
-
-old_asv = read_csv(params$cont[3])
-
-all_hash = union_all(old_hash, conv_table)
-
-new.hashes = setdiff(conv_table,old_hash)
-
-reads.new.hashes <- left_join(new.hashes, current_asv, by = c("Hash" = "Sequence"))
-
-all_asv = bind_rows (old_asv, current_asv)
-
-merging.output = tibble(Date = Sys.Date(), Old_db = params$cont[2], Old_ASV = params$cont[3],
-                        Input_folder= params$folder, Nseq_old_db = nrow(old_hash), Nseq_new_input = nrow(conv_table),
-                        Nseq_new_db = nrow(all_hash), N_newseq = nrow(new.hashes), Nreads_newseq = sum(reads.new.hashes$nReads) )
-ifelse(file.exists(params$cont[4]),
-       write_csv(merging.output, params$cont[4], append = T),
-       write_csv(merging.output, params$cont[4]) )
-
-write_csv(all_hash, paste0(params$folder, "/Hash_db_",Sys.Date(),".csv"))
-write_csv(all_asv, paste0(params$folder, "/ASV_all_",Sys.Date(),".csv"))
-
-}
-
-```
