@@ -358,7 +358,7 @@ fi
 
 ## MODIFY: output filename so the barcode name is easily found
 	cutadapt -g file:"${Barcodes_file}" -o "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}_round1{name}_round1.1.fastq -p "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}_round1{name}_round1.2.fastq \
-	 "${READ1}" "${READ2}"  --discard-untrimmed 2>> "${LOGFILE}"
+	 "${READ1}" "${READ2}" --quiet --cores 16 --discard-untrimmed 2>> "${LOGFILE}"
 
 
 	#This split each pair of fastqs into as many pairs of fastqs as barcodes are
@@ -368,10 +368,13 @@ fi
 		n_files=("${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.2.fastq)
  # print list of reverse FILES
  echo "trying here"
- echo "${n_files[@]}"
- echo "list files"
- ls "${OUTPUT_DIR}"/"${ID1S[i]}"
- ls "${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.2.fastq
+
+ # this section gice the information about the wildcard is working (from the cutadapt)
+ #echo "${n_files[@]}"
+
+# echo "list files"
+ #ls "${OUTPUT_DIR}"/"${ID1S[i]}"
+ #ls "${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.2.fastq
 
 		i_count=0
 
@@ -417,7 +420,8 @@ fi
 	  #echo "${short_r1file}"
 	  nseq_r1file=$(cat "${r1file}" |  wc -l)
 	  #echo "with ${nseq_r1file} reads"
-
+echo "this is the barcode we are trimming"
+echo "${RIGHT_BARCODE}"
 
 	  #Now use that as an argunment for cutadapt
 	  #echo "this is the right barcode"
@@ -425,7 +429,7 @@ fi
 
 # try to make cutadapt quieter
 	  cutadapt -g "${RIGHT_BARCODE}" -o "${MID_OUTPUT2}" \
-	  -p "${MID_OUTPUT1}" "${file}" "${r1file}" --quiet --discard-untrimmed 2>> "${LOGFILE}"
+	  -p "${MID_OUTPUT1}" "${file}" "${r1file}" --cores 16 --discard-untrimmed 2>> "${LOGFILE}"
 
 	  nseq_s2r1file=$(cat "${MID_OUTPUT1}" |  wc -l)
 	  nseq_s2r2file=$(cat "${MID_OUTPUT2}" |  wc -l)
@@ -456,22 +460,22 @@ fi
 	cutadapt -g file:"${primers_file}" --discard-untrimmed\
 	 -o "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.1.fastq \
 	 -p "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
-	 "${MID_OUTPUT1}" "${MID_OUTPUT2}" --quiet 2>> "${LOGFILE}"
+	 "${MID_OUTPUT1}" "${MID_OUTPUT2}" --cores 16 2>> "${LOGFILE}"
 
 
 
 
 	#Now remove the rev primer at the beggining of the .2 for those READS
 	#in which we found the FWD primer at the beggining of .1
-	cutadapt -g "${PRIMER2}" --discard-untrimmed \
+	cutadapt -g "${PRIMER2}" --cores 16 --discard-untrimmed \
 	-o "${NEW_OUTPUT_Fwd_2}" \
 	-p "${NEW_OUTPUT_Fwd_1}" \
 	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
-	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq --quiet 2>> "${LOGFILE}"
+	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq 2>> "${LOGFILE}"
 
 	#Now do similarly for those in which we found rev at the beggining of .1
 
-	cutadapt -g "${PRIMER1}" --discard-untrimmed \
+	cutadapt -g "${PRIMER1}" --cores 16 --discard-untrimmed \
 	-o "${NEW_OUTPUT_Rev_2}" \
 	-p "${NEW_OUTPUT_Rev_1}" \
 	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
@@ -512,7 +516,7 @@ fi
 
 	done
 
-	rm -rf "${OUTPUT_DIR}"/cleaned
+	#rm -rf "${OUTPUT_DIR}"/cleaned
 
 else #In case you already demultiplexed your samples, then cp the files you need
 	cp "${DEMULT_OUTPUT}"/sample_trans.tmp "${OUTPUT_DIR}"
