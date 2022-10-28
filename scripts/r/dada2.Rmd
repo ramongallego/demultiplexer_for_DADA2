@@ -29,7 +29,7 @@ You have successfully split your libraries into a pair (or two) of fastq files p
 
 First load the packages. And let's update the parameters we need
 ```{r loading packages, echo=FALSE ,message=FALSE}
-library (devtools)
+#library (devtools)
 library (tidyverse)
 library (stringr)
 library (dada2)
