@@ -116,41 +116,41 @@ out_Fs_tibble %>% write_csv("passing_filter.csv")
 Before claculating errors, it is best to remove samples that have 0 or few reads.
 
 ```{r removing samples 1}
-out_Fs_tibble %>% 
-  filter (reads.out > 20) %>% 
-  mutate (key = str_remove(file, "_Fwd.1.fastq")) %>% 
+out_Fs_tibble %>%
+  filter (reads.out > 20) %>%
+  mutate (key = str_remove(file, "_Fwd.1.fastq")) %>%
   select(key)-> filt_Fs_good
 
-out_Rs_tibble %>% 
-  filter (reads.out > 20) %>% 
-  mutate (key = str_remove(file, "_Rev.1.fastq")) %>% 
+out_Rs_tibble %>%
+  filter (reads.out > 20) %>%
+  mutate (key = str_remove(file, "_Rev.1.fastq")) %>%
   select(key)-> filt_Rs_good
 
 ## Select only those files in the lists above
 
-tibble(Filenames = filtF1s) %>% 
-  separate(Filenames, into = c(NA, "key"), sep = "/filtered/", remove = F ) %>% 
-  mutate (key = str_remove(key, "_F1_filt.fastq.gz")) %>% 
-  inner_join(filt_Fs_good) %>% 
+tibble(Filenames = filtF1s) %>%
+  separate(Filenames, into = c(NA, "key"), sep = "/filtered/", remove = F ) %>%
+  mutate (key = str_remove(key, "_F1_filt.fastq.gz")) %>%
+  inner_join(filt_Fs_good) %>%
   pull(Filenames) -> filtF1s_good
 
-tibble(Filenames = filtF2s) %>% 
-  separate(Filenames, into = c(NA, "key"), sep = "/filtered/", remove = F ) %>% 
-  mutate (key = str_remove(key, "_F2_filt.fastq.gz")) %>% 
-  inner_join(filt_Fs_good) %>% 
+tibble(Filenames = filtF2s) %>%
+  separate(Filenames, into = c(NA, "key"), sep = "/filtered/", remove = F ) %>%
+  mutate (key = str_remove(key, "_F2_filt.fastq.gz")) %>%
+  inner_join(filt_Fs_good) %>%
   pull(Filenames) -> filtF2s_good
 
 ### Same for Rs
-tibble(Filenames = filtR1s) %>% 
-  separate(Filenames, into = c(NA, "key"), sep = "/filtered/", remove = F ) %>% 
-  mutate (key = str_remove(key, "_R1_filt.fastq.gz")) %>% 
-  inner_join(filt_Rs_good) %>% 
+tibble(Filenames = filtR1s) %>%
+  separate(Filenames, into = c(NA, "key"), sep = "/filtered/", remove = F ) %>%
+  mutate (key = str_remove(key, "_R1_filt.fastq.gz")) %>%
+  inner_join(filt_Rs_good) %>%
   pull(Filenames) -> filtR1s_good
 
-tibble(Filenames = filtR2s) %>% 
-  separate(Filenames, into = c(NA, "key"), sep = "/filtered/", remove = F ) %>% 
-  mutate (key = str_remove(key, "_R2_filt.fastq.gz")) %>% 
-  inner_join(filt_Rs_good) %>% 
+tibble(Filenames = filtR2s) %>%
+  separate(Filenames, into = c(NA, "key"), sep = "/filtered/", remove = F ) %>%
+  mutate (key = str_remove(key, "_R2_filt.fastq.gz")) %>%
+  inner_join(filt_Rs_good) %>%
   pull(Filenames) -> filtR2s_good
 
 ```
@@ -193,18 +193,20 @@ derepR2s <- derepFastq(filtR2s_good, verbose=TRUE)
 # Name the derep-class objects by the sample names
 
 rownames(out_Fs) <- real.sample.name$Sample
+sample_map<- sample.map %>%
+select(key = fastq_header, Sample)
 
-filt_Fs_good %>% 
-  left_join(sample_map) -> filt_Fs_good 
+filt_Fs_good %>%
+  left_join(sample_map) -> filt_Fs_good
 
- names(derepF1s) <- names(derepF2s) <- filt_Fs_good$sample
+ names(derepF1s) <- names(derepF2s) <- filt_Fs_good$Sample
 
 filt_Rs_good %>% 
-  left_join(sample_map) -> filt_Rs_good 
+  left_join(sample_map) -> filt_Rs_good
 
 rownames(out_Rs) <- real.sample.name$Sample
 
- names(derepR1s) <- names(derepR2s) <- filt_Rs_good$sample
+ names(derepR1s) <- names(derepR2s) <- filt_Rs_good$Sample
 
 ```
 
@@ -315,52 +317,52 @@ Step 3 does the actual merging and returns another sequence Table
 
 seqtab.R.df=as.data.frame(seqtabR)
 
-seqtab.R.df %>% 
-  rownames_to_column("sample") %>% 
+seqtab.R.df %>%
+  rownames_to_column("sample") %>%
   pivot_longer(-sample, names_to = "sequence", values_to = "nReads_R") -> seqtab.R.df
 
 seqtab.F.df=as.data.frame(seqtabF)
-seqtab.F.df %>% 
-  rownames_to_column("sample") %>% 
+seqtab.F.df %>%
+  rownames_to_column("sample") %>%
   pivot_longer(-sample, names_to = "sequence", values_to = "nReads_F") -> seqtab.F.df
 
-full_join(seqtab.R.df, seqtab.F.df) %>% 
-  replace_na(list(nReads_R = 0, nReads_F = 0)) %>% 
-  group_by(sample,sequence ) %>% 
-  mutate(nReads = sum(nReads_R + nReads_F)) %>% 
-  select(sample, sequence, nReads)  %>% 
+full_join(seqtab.R.df, seqtab.F.df) %>%
+  replace_na(list(nReads_R = 0, nReads_F = 0)) %>%
+  group_by(sample,sequence ) %>%
+  mutate(nReads = sum(nReads_R + nReads_F)) %>%
+  select(sample, sequence, nReads)  %>%
   pivot_wider(id_cols = sample, names_from = sequence, values_from = nReads) -> full_df
 
 
 
-final.seqtab <- full_df %>% 
-  ungroup() %>% 
-  select(-sample) %>% 
+final.seqtab <- full_df %>%
+  ungroup() %>%
+  select(-sample) %>%
   as.matrix()
 
 dimnames(final.seqtab)[[1]] <- full_df$sample
 
-# 
+#
 # for (i in 1:ncol(seqtabF)) {   #for each column of the first dataframe
-# 
+#
 #   current_seq<-colnames(seqtabF)[i]
-# 
+#
 #   if (current_seq %in% colnames(seqtab.R.df)) { # is that column present on the second df?
-# 
+#
 #     final.seqtab[,current_seq]<-seqtabF[,i] + seqtab.R.df[,current_seq] #if yes, the new df has the sum of reads
-# 
+#
 #     seqtab.R.df[,current_seq]<-NULL
 #     #seqtab.R2.df<- seqtab.R2.df[,-current_seq] #we delete the column from the second df to speed up next search
-# 
-# 
+#
+#
 #   } else {        # if the column is not present, then the new df is the value of the first df
-# 
+#
 #     final.seqtab[,current_seq] <- seqtabF[,i]
-# 
+#
 #   }
-# 
-# 
-# 
+#
+#
+#
 # }
 # # Now cbind both dataset
 # final.seqtab <- as.matrix (cbind(final.seqtab,seqtab.R.df))
@@ -469,4 +471,3 @@ colnames(track) <- c("input_F", "input_R", "filtered_F","filtered_R",
 write_csv(track, paste0(params$folder,"/dada2_summary.csv"))
 
 ```
-
