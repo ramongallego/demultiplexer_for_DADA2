@@ -111,7 +111,18 @@ out_Fs_tibble<-tibble(file=dimnames(out_Fs)[[1]], reads.out=out_Fs[,2])
 out_Rs_tibble<-tibble(file=dimnames(out_Rs)[[1]], reads.out=out_Rs[,2])
 out_Fs_tibble
 out_Fs_tibble %>% write_csv("passing_filter.csv")
+
 ```
+Before claculating errors, it is best to remove samples that have 0 or few reads.
+
+```{r removing samples 1}
+
+to.keep.F <- map_lgl(dadaF1s, ~(sum(.x$denoised) > 150)) # Which samples have more than 150 reads passing filters in the Fwd direction
+to.keep.R <- map_lgl(dadaR1s, ~(sum(.x$denoised) > 150)) #  Which samples have more than 150 reads passing filters in the Rev direction
+
+to.keep <- (to.keep.F + to.keep.R) == 2 # Keep only those that pass boths filters
+```
+
 
 Now the first crucial step: learning the error rates that would be different for fwd and rev reads
 
