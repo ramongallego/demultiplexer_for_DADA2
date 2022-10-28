@@ -122,7 +122,7 @@ echo "Checking that all columns in metadata are there"
 
 for column in "${all_columns[@]}" ; do
 
- if [ "${!column}" > 0 ]; then
+ if [ "${!column}" -gt 0 ]; then
 	 echo "looking good, ${column}"
  else
   echo "Something went wrong with column name ${column}"
