@@ -8,7 +8,7 @@
 #$ -m be
 #$ -pe smp 50
 
-param_file= "/home/belenarias/edna/dada2/raw_data/params_cluster.sh "
+param_file="/home/belenarias/edna/dada2/raw_data/params_cluster.sh "
 
 
 # Usage bash demultiplex_both_fastqs.sh banzai_params.sh
