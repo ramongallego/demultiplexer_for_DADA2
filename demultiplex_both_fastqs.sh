@@ -1,4 +1,15 @@
-#!/usr/bin/env bash
+#!/bin/bash
+#$ -cwd
+#$ -j y
+#$ -S /bin/bash
+#$ -q all.q
+#$ -N raw_data_demultiplex
+#$ -M m.belen.ariasmella@essex.ac.uk
+#$ -m be
+#$ -pe smp 50
+
+param_file= "/home/belenarias/edna/dada2/raw_data/params_cluster.sh "
+
 
 # Usage bash demultiplex_both_fastqs.sh banzai_params.sh
 #This script is built using banzai (github.com/jimmyodonnell/banzai) as template
@@ -10,7 +21,7 @@ for file in "${SCRIPT_DIR}"/* ; do
 	source "${file}"
 done
 
-param_file=${1}
+#param_file=${1}
 
 echo "Reading analysis parameters from:"
 echo "${param_file}"
@@ -251,6 +262,7 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	  echo 'Aborting script'
 	  exit
 	fi
+
 
 
 
@@ -496,8 +508,8 @@ echo "${RIGHT_BARCODE}"
 		"${short_NEW_OUTPUT_Fwd_1}" "${nseq_NOF1}" \
 	  "${short_NEW_OUTPUT_Rev_1}" "${nseq_NOR1}" >> "${OUTPUT_SUMMARY}"
 	  # now clean the middle FILES - checking first if they do exist
-	#  rm "${file}"
-	 # rm "${r1file}"
+	  rm "${file}"
+	  rm "${r1file}"
 		if [[ -s "${MID_OUTPUT1}" ]]; then
 			rm "${MID_OUTPUT1}"
 			rm "${MID_OUTPUT2}"
@@ -512,11 +524,11 @@ echo "${RIGHT_BARCODE}"
 		fi
 
 	  done
-	 # rm -r "${OUTPUT_DIR}"/"${ID1S[i]}"
+	  rm -r "${OUTPUT_DIR}"/"${ID1S[i]}"
 
 	done
 
-	#rm -rf "${OUTPUT_DIR}"/cleaned
+	rm -rf "${OUTPUT_DIR}"/cleaned
 
 else #In case you already demultiplexed your samples, then cp the files you need
 	cp "${DEMULT_OUTPUT}"/sample_trans.tmp "${OUTPUT_DIR}"
