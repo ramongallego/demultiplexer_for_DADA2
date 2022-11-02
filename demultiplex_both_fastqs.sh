@@ -16,7 +16,7 @@ param_file="/home/belenarias/edna/dada2/raw_data/params_cluster.sh"
 
 #We need to gather: Location of functions  and fastqs:
 MAIN_DIR="$(dirname "$0")"
-SCRIPT_DIR="${MAIN_DIR}"/scripts
+SCRIPT_DIR="/home/belenarias/edna/dada2/demultiplexer_for_DADA2/scripts"
 for file in "${SCRIPT_DIR}"/* ; do
 	source "${file}"
 done
