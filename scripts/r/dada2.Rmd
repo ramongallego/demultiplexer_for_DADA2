@@ -1,19 +1,19 @@
 ---
 title: "Dada2_report"
-author: "Belen01"
+author: "Belen_rawdata_trim270_210"
 date: ""
 output: html_document
 params:
   folder:
-    value: "~/Projects/Belen/output_test/demultiplexed_20221029_0845"
+    value: x
   hash:
-    value: "yes"
+    value: y
   cont:
-    value: "no"
+    value: z
   fastqs:
-    value:  "~/Projects/Belen/output_test/demultiplexed_20221029_0845/demultiplexed"
+    value:  a
   original:
-    value: c("~/Projects/Belen/Data/Lib01_S1_R1_short.fastq", "~/Projects/Belen/Data/Lib01_S1_R2_short.fastq")
+    value: b
 
 ---
 
@@ -100,7 +100,7 @@ out_Fs <- filterAndTrim(F1sgood, filtF1s, F2sgood, filtF2s, truncLen=c(240,180),
 
 filtR1s <- file.path(filt_path, paste0(good.sample.names, "_R1_filt.fastq.gz"))
 filtR2s <- file.path(filt_path, paste0(good.sample.names, "_R2_filt.fastq.gz"))
-out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(240,180),
+out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(270,210),
                       maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE)
 ```
@@ -201,7 +201,7 @@ filt_Fs_good %>%
 
  names(derepF1s) <- names(derepF2s) <- filt_Fs_good$Sample
 
-filt_Rs_good %>% 
+filt_Rs_good %>%
   left_join(sample_map) -> filt_Rs_good
 
 rownames(out_Rs) <- real.sample.name$Sample
