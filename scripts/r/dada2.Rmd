@@ -100,7 +100,7 @@ out_Fs <- filterAndTrim(F1sgood, filtF1s, F2sgood, filtF2s, truncLen=c(240,180),
 
 filtR1s <- file.path(filt_path, paste0(good.sample.names, "_R1_filt.fastq.gz"))
 filtR2s <- file.path(filt_path, paste0(good.sample.names, "_R2_filt.fastq.gz"))
-out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(270,210),
+out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(240,180),
                       maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE)
 ```
@@ -227,6 +227,7 @@ tosave <- list(derepF1s, derepF2s, derepR1s, derepR2s, dadaF1s, dadaF2s, dadaR1s
 
    saveRDS(tosave, file = "tosave.rds")
 
+derepF1s <- newdata[[1]]
 
 ```
 The pipeline breaks if for some reason there are samples that don't have any reads passing filters
