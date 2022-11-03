@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript
+#!/usr/bin/env Rscript4.0
 
 msg <-"the script gets executed"
 
