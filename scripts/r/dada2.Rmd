@@ -47,6 +47,7 @@ Sys.setenv(READ2=params$original[2])
 ```
 Firstly, we'll find the patterns that separate our Fwd, Rev, .1 and .2 files. look at the quality of the .1 and .2 reads
 ```{r listing files}
+R.version()
 
 F1s <- sort(list.files(path1, pattern="_Fwd.1.fastq", full.names = TRUE))
 F2s <- sort(list.files(path1, pattern="_Fwd.2.fastq", full.names = TRUE))

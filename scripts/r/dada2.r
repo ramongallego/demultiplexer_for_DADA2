@@ -11,6 +11,7 @@ library(rmarkdown)
 
 print (msg)
 
+R.version()
 
 arguments <- commandArgs(TRUE)
 
