@@ -228,7 +228,7 @@ tosave <- list(derepF1s, derepF2s, derepR1s, derepR2s, dadaF1s, dadaF2s, dadaR1s
 
    saveRDS(tosave, file = "tosave.rds")
 
-derepF1s <- newdata[[1]]
+
 
 ```
 The pipeline breaks if for some reason there are samples that don't have any reads passing filters
