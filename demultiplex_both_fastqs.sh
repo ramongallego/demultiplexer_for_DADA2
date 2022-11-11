@@ -263,9 +263,13 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	  exit
 	fi
 
+PRIMER1_RC=$(revcom "${PRIMER1}")
 
+echo "Fwd primer is ${PRIMER1} and its reverse complement is ${PRIMER1_RC}"
 
+PRIMER2_RC=$(revcom "${PRIMER2}")
 
+echo "Rev primer is ${PRIMER2} and its reverse complement is ${PRIMER2_RC}"
 
 #######
 #Unique samples are given by combining the primary and secondary indexes
@@ -474,24 +478,50 @@ echo "${RIGHT_BARCODE}"
 	 -p "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
 	 "${MID_OUTPUT1}" "${MID_OUTPUT2}" --quiet --cores 16 2>> "${LOGFILE}"
 
+# Bc some amplicons have the reverse complement of the reverse primer at the beggining of the .1,
+# we'll look for that primer and remove it
+
+cutadapt -a "${PRIMER2_RC}" \
+-o "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.norc.1.fastq \
+"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq \
+--quiet --cores 16
 
 
+
+cutadapt -a "${PRIMER1_RC}" \
+-o "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.norc.1.fastq \
+"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq \
+--quiet --cores 16
+
+
+
+cutadapt -a "${PRIMER1_RC}" \
+-o "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.norc.2.fastq \
+"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
+--quiet --cores 16
+
+cutadapt -a "${PRIMER2_RC}" \
+-o "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.norc.2.fastq \
+"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
+--quiet --cores 16
 
 	#Now remove the rev primer at the beggining of the .2 for those READS
 	#in which we found the FWD primer at the beggining of .1
 	cutadapt -g "${PRIMER2}" --quiet --cores 16 --discard-untrimmed \
 	-o "${NEW_OUTPUT_Fwd_2}" \
 	-p "${NEW_OUTPUT_Fwd_1}" \
-	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
-	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq 2>> "${LOGFILE}"
+	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.norc.2.fastq \
+	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.norc.1.fastq 2>> "${LOGFILE}"
 
 	#Now do similarly for those in which we found rev at the beggining of .1
 
 	cutadapt -g "${PRIMER1}" --quiet --cores 16 --discard-untrimmed \
 	-o "${NEW_OUTPUT_Rev_2}" \
 	-p "${NEW_OUTPUT_Rev_1}" \
-	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
-	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq --quiet 2>> "${LOGFILE}"
+	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.norc.2.fastq \
+	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.norc.1.fastq --quiet 2>> "${LOGFILE}"
+
+
 
 
 	nseq_NOF1=$(cat ${NEW_OUTPUT_Fwd_1} | wc -l)
