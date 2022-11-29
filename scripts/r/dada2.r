@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript
+#!/usr/bin/env Rscript4.2.1
 
 msg <-"the script gets executed"
 
@@ -11,6 +11,7 @@ library(rmarkdown)
 
 print (msg)
 
+version$version.string
 
 arguments <- commandArgs(TRUE)
 

@@ -35,17 +35,17 @@ COLNAME_SAMPLE_ID="sample_id"
 # Your metadata must have a column corresponding to the subfolders containing the raw reads.
 # In order to make this flexible across both multiple and single library preps, you must include this even if you only sequenced one library (sorry!).
 COLNAME_ID1_NAME="pri_index_name"
-COLNAME_ID1_SEQ="pri_index_seq"
+#COLNAME_ID1_SEQ="pri_index_seq"
 
-COLNAME_INSERT_SIZE="insert_size"
+#COLNAME_INSERT_SIZE="insert_size"
 
-LENGTH_FRAG="385"
+#LENGTH_FRAG="385"
 
 
 # if "NO", provide the following values for PEAR:
-minimum_overlap="10" # [10]
-assembled_max="10000" # [1000]
-assembled_min="50" # [50]
+#minimum_overlap="10" # [10]
+#assembled_max="10000" # [1000]
+#assembled_min="50" # [50]
 
 ################################################################################
 # QUALITY FILTERING
@@ -54,8 +54,8 @@ assembled_min="50" # [50]
 # You may also want to exclude sequences containing more than a specified threshold of 'expected errors'
 # This number is equal to the sum of the error probabilities.
 # For more information on this parameter, Google the usearch help
-Perform_Expected_Error_Filter="YES" # [YES|NO]
-Max_Expected_Errors="0.5"
+#Perform_Expected_Error_Filter="YES" # [YES|NO]
+#Max_Expected_Errors="0.5"
 
 
 ################################################################################
@@ -73,9 +73,9 @@ COLNAME_ID2_SEQ="sec_index_seq"
 
 # How many nucleotides pad the 5' end of the tag sequence?
 # TODO build in flexibility (this number is unused right now)
-TAG_Ns="3"
-SECONDARY_INDEX_START="4"
-COLNAME_ID2_START="sec_index_start"
+#TAG_Ns="3"
+#SECONDARY_INDEX_START="4"
+#COLNAME_ID2_START="sec_index_start"
 
 ################################################################################
 # PRIMER REMOVAL
