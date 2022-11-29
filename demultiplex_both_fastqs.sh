@@ -395,7 +395,7 @@ echo "First cutadapt, splits data by FWD or REV"
 
 cutadapt -g file:"${primers_file}" -o "${OUTPUT_DIR}"/"${BASE1}"_{name}.fastq \
 	-p "${OUTPUT_DIR}"/"${BASE2}"_{name}.fastq \
- "${READ1}" "${READ2}"  --cores 16 --report=minimal --discard-untrimmed  2>> "${LOGFILE}"
+ "${READ1}" "${READ2}"  --cores 16 --report=minimal --discard-untrimmed  --info-file "${OUTPUT_DIR}"/"${BASE1}"_info_round1.txt 2>> "${LOGFILE}"
 
 ## Now remove the other primer from the .2. First the Rev primer from the FWD files
 
@@ -405,7 +405,7 @@ cutadapt -g "${PRIMER2}" --report=minimal --cores 16 --discard-untrimmed \
 -o "${OUTPUT_DIR}"/"${BASE2}"_FWD_noprimers.fastq \
 -p "${OUTPUT_DIR}"/"${BASE1}"_FWD_noprimers.fastq \
 "${OUTPUT_DIR}"/"${BASE2}"_FWD.fastq \
-"${OUTPUT_DIR}"/"${BASE1}"_FWD.fastq 2>> "${LOGFILE}"
+"${OUTPUT_DIR}"/"${BASE1}"_FWD.fastq --info-file "${OUTPUT_DIR}"/"${BASE1}"_info_round2.txt 2>> "${LOGFILE}"
 
 # Second, the FWD primer from teh .2 of the REV files
 
@@ -415,7 +415,7 @@ cutadapt -g "${PRIMER1}"  --cores 16 --discard-untrimmed \
 -o "${OUTPUT_DIR}"/"${BASE2}"_REV_noprimers.fastq \
 -p "${OUTPUT_DIR}"/"${BASE1}"_REV_noprimers.fastq \
 "${OUTPUT_DIR}"/"${BASE2}"_REV.fastq \
-"${OUTPUT_DIR}"/"${BASE1}"_REV.fastq  --report=minimal 2>> "${LOGFILE}"
+"${OUTPUT_DIR}"/"${BASE1}"_REV.fastq  --report=minimal --info-file "${OUTPUT_DIR}"/"${BASE1}"_info_round3.txt 2>> "${LOGFILE}"
 
 ##### NOW repeat the same cutadapt but changing -g for -a: THis way we keep just the barcode areas, and we can
 ## Search for the actual sequences, without the Ns
