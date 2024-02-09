@@ -310,7 +310,7 @@ fi
 
 	Barcodes_file="$OUTPUT_DIR"/barcodes.fasta
 	for (( i=0; i < "${#ID2S[@]}"; i++ )); do
-	  printf ">%s\n^NNN%s\n" \
+	  printf ">%s\n^%s\n" \
 		"${ID2S[i]}" "${ID2S[i]}" >> "${Barcodes_file}"
 	done
 
@@ -339,7 +339,7 @@ fi
 	  # Identify the forward and reverse fastq files.
 
 	  READ1="${PARENT_DIR}/${FILE1[i]}"
-		READ2="${PARENT_DIR}/${FILE2[i]}"
+	  READ2="${PARENT_DIR}/${FILE2[i]}"
 
 	  BASE1="${FILE1[i]%.*}"
 	  BASE2="${FILE2[i]%.*}"
@@ -416,7 +416,7 @@ fi
 	  #echo ${RIGHT_BARCODE}
 
 # try to make cutadapt quieter
-	  cutadapt -g ^NNN"${RIGHT_BARCODE}" -o "${MID_OUTPUT2}" \
+	  cutadapt -g ^"${RIGHT_BARCODE}" -o "${MID_OUTPUT2}" \
 	  -p "${MID_OUTPUT1}" "${file}" "${r1file}" --quiet --discard-untrimmed 2>> "${LOGFILE}"
 
 	  nseq_s2r1file=$(cat "${MID_OUTPUT1}" |  wc -l)
