@@ -122,7 +122,7 @@ echo "Checking that all columns in metadata are there"
 
 for column in "${all_columns[@]}" ; do
 
- if [ "${!column}" > 0 ]; then
+ if [ "${!column}" -gt 0 ]; then
 	 echo "looking good, ${column}"
  else
   echo "Something went wrong with column name ${column}"
@@ -353,9 +353,13 @@ fi
 
 	##First cutdapt:
 	#TODO: use only the number of barcodes used for this Library
+	Barcodes_file="$OUTPUT_DIR"/barcodes_"${ID1S[i]}".fasta
+
+	awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ADAP=$COLNUM_ID2 \
+	'{if ($COLNUM == VALUE) { printf ">%s\n%s\n", $ADAP, $ADAP } }' $SEQUENCING_METADATA > "${Barcodes_file}"
 
 
-	cutadapt -g file:"${Barcodes_file}" -o "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.1.fastq -p "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}-{name}_round1.2.fastq \
+	cutadapt -g file:"${Barcodes_file}" -o "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}_round1{name}_round1.1.fastq -p "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}_round1{name}_round1.2.fastq \
 	 "${READ1}" "${READ2}" --quiet --discard-untrimmed
 
 
@@ -375,9 +379,7 @@ fi
  #The barcode detected on the .1 is written in the name, so we now look
  #for that barcode at the beggining of the .2 read
 
-		RIGHT_BARCODE=$(echo ${file} | awk '/_round1/ {
-	    match($0, /_round1/); print substr($0, RSTART - 6, 6);
-	    }')
+		RIGHT_BARCODE=$(echo ${file} |  awk 'BEGIN {FS="_round1"}; {print $2}')
 
 			short_file=$(basename "${file}")
 
