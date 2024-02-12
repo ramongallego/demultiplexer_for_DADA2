@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+module load cutadapt/4.1
 
 # Usage bash demultiplex_both_fastqs.sh banzai_params.sh
 #This script is built using banzai (github.com/jimmyodonnell/banzai) as template
@@ -531,6 +532,7 @@ READ2="${PARENT_DIR}/${FILE2[1]}"
 
 if [[ "${SEARCH_ASVs}" = "YES" ]]; then
 	echo "This is read1 ${READ1}"
+	module load R/4.3.1
 	Rscript "${SCRIPT_DIR}"/r/dada2.r "${OUTPUT_DIR}" "${DEMULT_DIR}" "${SCRIPT_DIR}" "${USE_HASH}" "${READ1}" "${READ2}"\
 	"${ADD_TO_PREVIOUS}" "${FORMER_HASH}" "${FORMER_ABUNDANCE}" "${LOG_FILE}"
 fi
