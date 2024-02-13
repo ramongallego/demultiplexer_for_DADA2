@@ -1,10 +1,13 @@
-params <-
-list(folder = "x", hash = "y", cont = "z", fastqs = "a", original = "b")
+
+arguments <- commandArgs(TRUE)
+
+
+
+params <- list(folder =arguments[1],
+ hash = arguments[4],
+  cont = arguments[7:10], fastqs = arguments[2], original = arguments[5:6])
 
 ## ----setup, include=FALSE-----------------------------------------------------
-
-knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir=params$folder)
 
 
 ## ----loading packages, echo=FALSE ,message=FALSE------------------------------
@@ -51,17 +54,6 @@ R2sgood<-R2s[sample.names %in% sample.map$fastq_header]
 
 
 
-## ----qplot1, echo=FALSE-------------------------------------------------------
-plotQualityProfile(F1sgood[1:4])
-
-
-## ----plot2, echo=FALSE--------------------------------------------------------
-plotQualityProfile(R1sgood[1:4])
-
-
-## ----qplot3, echo=FALSE-------------------------------------------------------
-plotQualityProfile(F2sgood[1:4])
-
 
 ## ----filter and trim----------------------------------------------------------
 filt_path <- file.path(params$folder, "/filtered") # Place filtered files in filtered/ subdirectory
@@ -97,12 +89,6 @@ saveRDS(tosave, file = "all.errors.rds")
 
 
 
-## ----plotErrors---------------------------------------------------------------
-
-plotErrors(errF1, nominalQ = T)
-plotErrors(errF2, nominalQ = T)
-plotErrors(errR1, nominalQ = T)
-plotErrors(errR2, nominalQ = T)
 
 
 
