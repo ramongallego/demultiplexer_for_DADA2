@@ -118,7 +118,7 @@ COLNUM_PRIMER2=$( get_colnum "${COLNAME_PRIMER2}" "${SEQUENCING_METADATA}")
 
 all_columns=( COLNUM_FILE1 COLNUM_FILE2 COLNUM_ID1 COLNUM_ID2 \
 COLNUM_ID2_START COLNUM_SAMPLE COLNUM_PRIMER1 COLNUM_PRIMER2)
-
+#TODO:I am not using colnumID2 START
 echo "Checking that all columns in metadata are there"
 
 for column in "${all_columns[@]}" ; do
