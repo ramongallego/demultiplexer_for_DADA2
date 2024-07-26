@@ -39,6 +39,8 @@ R2s <- sort(list.files(path1, pattern="_Rev.2.fastq", full.names = TRUE))
 sample.names <- str_replace(basename(F1s), "_Fwd.1.fastq","")
 
 #Now use only those that reflect a real sample
+#TODO: Remove empty files
+
 
 good.sample.names<-sample.names[sample.names %in% sample.map$fastq_header]
 # Introduce here the biological counterpart of the fastq file
