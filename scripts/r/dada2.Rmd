@@ -109,7 +109,8 @@ out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(200,200),
 ```{r as tibble}
 out_Fs_tibble<-tibble(file=dimnames(out_Fs)[[1]], reads.out=out_Fs[,2])
 out_Rs_tibble<-tibble(file=dimnames(out_Rs)[[1]], reads.out=out_Rs[,2])
-out_Fs_tibble
+out_Fs_tibble |> write_csv(file.path(params$folder,"outF.csv"))
+out_Rs_tibble |> write_csv(file.path(params$folder,"outR.csv"))
 ```
 
 Now the first crucial step: learning the error rates that would be different for fwd and rev reads
