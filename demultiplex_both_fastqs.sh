@@ -281,45 +281,42 @@ if [[ "${NSAMPLES}" != "${N_UNIQ_SAMPLES}" ]]; then
 	exit
 fi
 
-
-	ID1_ALL=($(awk -F',' -v COLNUM=$COLNUM_ID1 \
-	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}" ))
-	ID1S=($(awk -F',' -v COLNUM=$COLNUM_ID1 \
-	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}"  |\
-			sort | uniq))
-	ID2_ALL=($(awk -F',' -v COLNUM=$COLNUM_ID2 \
-	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}" ))
-	ID2_ALL_RC=($( for i in "${ID2_ALL[@]}"; do revcom $i; done))
-
-# write file for translating demultiplexed output to samples
+# 
+# 	ID1_ALL=($(awk -F',' -v COLNUM=$COLNUM_ID1 \
+# 	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}" ))
+# 	ID1S=($(awk -F',' -v COLNUM=$COLNUM_ID1 \
+# 	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}"  |\
+# 			sort | uniq))
+# 	ID2_ALL=($(awk -F',' -v COLNUM=$COLNUM_ID2 \
+# 	  'NR>1 { print $COLNUM }' "${SEQUENCING_METADATA}" ))
+# 	ID2_ALL_RC=($( for i in "${ID2_ALL[@]}"; do revcom $i; done))
+# 
+# # write file for translating demultiplexed output to samples
 	SAMPLE_TRANS_FILE="${OUTPUT_DIR}"/sample_trans.tmp
-	for (( i=0; i < "${#ID2_ALL[@]}"; i++ )); do
-	  printf "ID1=%s;ID2A=%s;ID2B=%s\t%s_%s\t%s\n" \
-		"${ID1_ALL[i]}" "${ID2_ALL[i]}" "${ID2_ALL_RC[i]}" \
-		"${ID1_ALL[i]}" "${ID2_ALL[i]}" \
-		"${SAMPLE_NAMES[i]}" >> "${SAMPLE_TRANS_FILE}"
-	done
-	for (( i=0; i < "${#ID1S[@]}"; i++ )); do
-	  printf "File1:%s\tFile2:%s\tLib:%s\n" \
-	  "${FILE1[i]}" "${FILE2[i]}" "${ID1S[i]}"
+# 	for (( i=0; i < "${#ID2_ALL[@]}"; i++ )); do
+# 	  
+# 	done
+# 	for (( i=0; i < "${#ID1S[@]}"; i++ )); do
+# 	  printf "File1:%s\tFile2:%s\tLib:%s\n" \
+# 	  "${FILE1[i]}" "${FILE2[i]}" "${ID1S[i]}"
+# 
+# 
+# 	done
 
-
-	done
-
-
-#Create the fasta file of the barcodes
-
-	Barcodes_file="$OUTPUT_DIR"/barcodes.fasta
-	for (( i=0; i < "${#ID2S[@]}"; i++ )); do
-	  printf ">%s\n^%s\n" \
-		"${ID2S[i]}" "${ID2S[i]}" >> "${Barcodes_file}"
-	done
-
-	primers_file="${OUTPUT_DIR}"/pcr_primers.fasta
-
-	printf ">FWD\n${PRIMER1}\n>REV\n${PRIMER2}\n" > "${primers_file}"
-
-	source "${SCRIPT_DIR}"/functions/check_primers.sh "${primers_file}"
+# 
+# #Create the fasta file of the barcodes
+# 
+# 	Barcodes_file="$OUTPUT_DIR"/barcodes.fasta
+# 	for (( i=0; i < "${#ID2S[@]}"; i++ )); do
+# 	  printf ">%s\n^%s\n" \
+# 		"${ID2S[i]}" "${ID2S[i]}" >> "${Barcodes_file}"
+# 	done
+# 
+# 	primers_file="${OUTPUT_DIR}"/pcr_primers.fasta
+# 
+# 	printf ">FWD\n${PRIMER1}\n>REV\n${PRIMER2}\n" > "${primers_file}"
+# 
+# 	source "${SCRIPT_DIR}"/functions/check_primers.sh "${primers_file}"
 
 #Hooray it works
 #Create a dir for all the demultiplexed files
@@ -344,23 +341,32 @@ fi
 
 	  BASE1="${FILE1[i]%.*}"
 	  BASE2="${FILE2[i]%.*}"
+# Subset here to use the subsetting related to the file, and not dependent on the order 
+# of lib names
 
-	  mkdir "${OUTPUT_DIR}"/"${ID1S[i]}"
+ ID1S=$( awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ID1=$COLNUM_ID1 \
+	' $COLNUM == VALUE { print  $ID1 } }' $SEQUENCING_METADATA | uniq)
+	
+	awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ID1=$COLNUM_ID1 \
+	-v ID2=$COLNUM_ID2 -v SAMPLE_NAME=$COLNUM_SAMPLE
+	' $COLNUM == VALUE { printf  "ID1=%s;ID2=%s\t%s_%s\t%s\n", $ID1, $ID2, $ID1, $ID2, $SAMPLE_NAME } ' $SEQUENCING_METADATA >> "${SAMPLE_TRANS_FILE}"
+
+	  mkdir "${OUTPUT_DIR}"/"${ID1S}"
 
 
-		mkdir "${OUTPUT_DIR}"/cleaned/"${ID1S[i]}"
+		mkdir "${OUTPUT_DIR}"/cleaned/"${ID1S}"
 
 		echo "Working on Library $[i+1] out of ${#FILE1[@]}"
 
 	##First cutdapt:
 	#TODO: use only the number of barcodes used for this Library
-	Barcodes_file="$OUTPUT_DIR"/barcodes_"${ID1S[i]}".fasta
+	Barcodes_file="$OUTPUT_DIR"/barcodes_"${ID1S}".fasta
 
 	awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ADAP=$COLNUM_ID2 \
 	'{if ($COLNUM == VALUE) { printf ">%s\n%s\n", $ADAP, $ADAP } }' $SEQUENCING_METADATA > "${Barcodes_file}"
 
 
-	cutadapt -g file:"${Barcodes_file}" -o "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}_round1{name}_round1.1.fastq -p "${OUTPUT_DIR}"/${ID1S[i]}/${ID1S[i]}_round1{name}_round1.2.fastq \
+	cutadapt -g file:"${Barcodes_file}" -o "${OUTPUT_DIR}"/${ID1S}/${ID1S}_round1{name}_round1.1.fastq -p "${OUTPUT_DIR}"/${ID1S}/${ID1S}_round1{name}_round1.2.fastq \
 	 "${READ1}" "${READ2}" --quiet --discard-untrimmed
 
 
@@ -368,7 +374,7 @@ fi
 	#but only looking at them on the .1 file -> do the same on the other file, and keep
 	#the order of reads similar in both files
 
-		n_files=("${OUTPUT_DIR}"/"${ID1S[i]}"/*round1.2.fastq)
+		n_files=("${OUTPUT_DIR}"/"${ID1S}"/*round1.2.fastq)
 		
 		echo "${n_files}"
 
@@ -386,17 +392,17 @@ fi
 
 		r1file=$(echo ${file} | sed 's/.2.fastq/.1.fastq/g' )
 		 	short_r1file=$(basename "${r1file}") # .1.fastq
-	  MID_OUTPUT1="${OUTPUT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_mid.1.fastq
+	  MID_OUTPUT1="${OUTPUT_DIR}"/"${ID1S}"_"${RIGHT_BARCODE}"_mid.1.fastq
 			short_MID_OUTPUT1=$(basename "${MID_OUTPUT1}") #double trimmed
-	  MID_OUTPUT2="${OUTPUT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_mid.2.fastq #double trimmed
+	  MID_OUTPUT2="${OUTPUT_DIR}"/"${ID1S}"_"${RIGHT_BARCODE}"_mid.2.fastq #double trimmed
 			short_MID_OUTPUT2=$(basename "${MID_OUTPUT2}")
-		NEW_OUTPUT_Fwd_1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Fwd.1.fastq
+		NEW_OUTPUT_Fwd_1="${DEMULT_DIR}"/"${ID1S}"_"${RIGHT_BARCODE}"_Fwd.1.fastq
 			short_NEW_OUTPUT_Fwd_1=$(basename "${NEW_OUTPUT_Fwd_1}")
 		NEW_OUTPUT_Fwd_2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Fwd.2.fastq
 			short_NEW_OUTPUT_Fwd_2=$(basename "${NEW_OUTPUT_Fwd_2}")
-		NEW_OUTPUT_Rev_1="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Rev.1.fastq
+		NEW_OUTPUT_Rev_1="${DEMULT_DIR}"/"${ID1S}"_"${RIGHT_BARCODE}"_Rev.1.fastq
 			short_NEW_OUTPUT_Rev_1=$(basename "${NEW_OUTPUT_Rev_1}")
-		NEW_OUTPUT_Rev_2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Rev.2.fastq
+		NEW_OUTPUT_Rev_2="${DEMULT_DIR}"/"${ID1S}"_"${RIGHT_BARCODE}"_Rev.2.fastq
 			short_NEW_OUTPUT_Rev_2=$(basename "${NEW_OUTPUT_Rev_2}")
 
 		#New messages so it's easier to see the progress of the script
@@ -449,8 +455,8 @@ fi
 
 
 	cutadapt -g file:"${primers_file}" --discard-untrimmed\
-	 -o "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.1.fastq \
-	 -p "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
+	 -o "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_{name}_clean.1.fastq \
+	 -p "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
 	 "${MID_OUTPUT1}" "${MID_OUTPUT2}" --quiet 2>> "${LOGFILE}"
 
 
@@ -461,16 +467,16 @@ fi
 	cutadapt -g "${PRIMER2}" --discard-untrimmed \
 	-o "${NEW_OUTPUT_Fwd_2}" \
 	-p "${NEW_OUTPUT_Fwd_1}" \
-	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
-	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq --quiet 2>> "${LOGFILE}"
+	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
+	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq --quiet 2>> "${LOGFILE}"
 
 	#Now do similarly for those in which we found rev at the beggining of .1
 
 	cutadapt -g "${PRIMER1}" --discard-untrimmed \
 	-o "${NEW_OUTPUT_Rev_2}" \
 	-p "${NEW_OUTPUT_Rev_1}" \
-	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
-	"${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq --quiet 2>> "${LOGFILE}"
+	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
+	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.1.fastq --quiet 2>> "${LOGFILE}"
 
 
 	nseq_NOF1=$(cat ${NEW_OUTPUT_Fwd_1} | wc -l)
@@ -493,17 +499,17 @@ fi
 			rm "${MID_OUTPUT1}"
 			rm "${MID_OUTPUT2}"
 		fi
-		if [[ -s "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq ]]; then
-			rm "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq
-			rm "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq
+		if [[ -s "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq ]]; then
+			rm "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq
+			rm "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq
 		fi
-		if [[ -s "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq ]]; then
-			rm "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.2.fastq
-			rm "${OUTPUT_DIR}"/cleaned/${ID1S[i]}/${ID1S[i]}-"${RIGHT_BARCODE}"_REV_clean.1.fastq
+		if [[ -s "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.2.fastq ]]; then
+			rm "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.2.fastq
+			rm "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.1.fastq
 		fi
 
 	  done
-	  rm -r "${OUTPUT_DIR}"/"${ID1S[i]}"
+	  rm -r "${OUTPUT_DIR}"/"${ID1S}"
 
 	done
 
