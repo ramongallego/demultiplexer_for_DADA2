@@ -347,6 +347,8 @@ fi
  ID1S=$( awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ID1=$COLNUM_ID1 \
 	' {if ($COLNUM == VALUE) { print  $ID1 }} ' $SEQUENCING_METADATA | uniq)
 	
+	echo ${ID1S}
+	
 	awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ID1=$COLNUM_ID1 \
 	-v ID2=$COLNUM_ID2 -v SAMPLE_NAME=$COLNUM_SAMPLE \
 	' {if ($COLNUM == VALUE) { printf  "ID1=%s;ID2=%s\t%s_%s\t%s\n", $ID1, $ID2, $ID1, $ID2, $SAMPLE_NAME }} ' $SEQUENCING_METADATA >> "${SAMPLE_TRANS_FILE}"
@@ -378,8 +380,7 @@ fi
 
 		n_files=("${OUTPUT_DIR}"/"${ID1S}"/*round1.2.fastq)
 		
-		echo "${n_files}"
-
+		
 		i_count=0
 
 	 for file in "${n_files[@]}"; do
