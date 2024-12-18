@@ -345,7 +345,7 @@ fi
 # of lib names
 
  ID1S=$( awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ID1=$COLNUM_ID1 \
-	' $COLNUM == VALUE { print  $ID1 } }' $SEQUENCING_METADATA | uniq)
+	' $COLNUM == VALUE { print  $ID1 } ' $SEQUENCING_METADATA | uniq)
 	
 	awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ID1=$COLNUM_ID1 \
 	-v ID2=$COLNUM_ID2 -v SAMPLE_NAME=$COLNUM_SAMPLE
