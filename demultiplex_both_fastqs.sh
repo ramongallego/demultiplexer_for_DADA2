@@ -366,8 +366,10 @@ fi
 	'{if ($COLNUM == VALUE) { printf ">%s\n%s\n", $ADAP, $ADAP } }' $SEQUENCING_METADATA > "${Barcodes_file}"
 
 
-	cutadapt -g file:"${Barcodes_file}" -o "${OUTPUT_DIR}"/${ID1S}/${ID1S}_round1{name}_round1.1.fastq -p "${OUTPUT_DIR}"/${ID1S}/${ID1S}_round1{name}_round1.2.fastq \
-	 "${READ1}" "${READ2}" --quiet --discard-untrimmed
+	cutadapt -g file:"${Barcodes_file}" \
+	-o "${OUTPUT_DIR}"/${ID1S}/${ID1S}_round1{name}_round1.1.fastq \
+	-p "${OUTPUT_DIR}"/${ID1S}/${ID1S}_round1{name}_round1.2.fastq \
+	 "${READ1}" "${READ2}" --discard-untrimmed -j 0
 
 
 	#This split each pair of fastqs into as many pairs of fastqs as barcodes are
@@ -426,7 +428,7 @@ fi
 
 # try to make cutadapt quieter
 	  cutadapt -g ^"${RIGHT_BARCODE}" -o "${MID_OUTPUT2}" \
-	  -p "${MID_OUTPUT1}" "${file}" "${r1file}" --quiet --discard-untrimmed 2>> "${LOGFILE}"
+	  -p "${MID_OUTPUT1}" "${file}" "${r1file}" -j 0 --quiet --discard-untrimmed 2>> "${LOGFILE}"
 
 	  nseq_s2r1file=$(cat "${MID_OUTPUT1}" |  wc -l)
 	  nseq_s2r2file=$(cat "${MID_OUTPUT2}" |  wc -l)
@@ -457,7 +459,7 @@ fi
 	cutadapt -g file:"${primers_file}" --discard-untrimmed\
 	 -o "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_{name}_clean.1.fastq \
 	 -p "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
-	 "${MID_OUTPUT1}" "${MID_OUTPUT2}" --quiet 2>> "${LOGFILE}"
+	 -j 0 "${MID_OUTPUT1}" "${MID_OUTPUT2}" --quiet 2>> "${LOGFILE}"
 
 
 
@@ -468,7 +470,7 @@ fi
 	-o "${NEW_OUTPUT_Fwd_2}" \
 	-p "${NEW_OUTPUT_Fwd_1}" \
 	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
-	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq --quiet 2>> "${LOGFILE}"
+	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq -j 0 --quiet 2>> "${LOGFILE}"
 
 	#Now do similarly for those in which we found rev at the beggining of .1
 
@@ -476,7 +478,7 @@ fi
 	-o "${NEW_OUTPUT_Rev_2}" \
 	-p "${NEW_OUTPUT_Rev_1}" \
 	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
-	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.1.fastq --quiet 2>> "${LOGFILE}"
+	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.1.fastq -j 0 --quiet 2>> "${LOGFILE}"
 
 
 	nseq_NOF1=$(cat ${NEW_OUTPUT_Fwd_1} | wc -l)
