@@ -113,11 +113,11 @@ COLNUM_SAMPLE=$( get_colnum "${COLNAME_SAMPLE_ID}" "${SEQUENCING_METADATA}")
 # Primers
 COLNUM_PRIMER1=$( get_colnum "${COLNAME_PRIMER1}" "${SEQUENCING_METADATA}")
 COLNUM_PRIMER2=$( get_colnum "${COLNAME_PRIMER2}" "${SEQUENCING_METADATA}")
-
+COLNUM_LOCUS=$(get_colnum "${COLNAME_LOCUS}" "${SEQUENCING_METADATA}")
 # Run away from the script if any of the previous columns was not found
 
 all_columns=( COLNUM_FILE1 COLNUM_FILE2 COLNUM_ID1 COLNUM_ID2 \
-COLNUM_ID2_START COLNUM_SAMPLE COLNUM_PRIMER1 COLNUM_PRIMER2)
+COLNUM_ID2_START COLNUM_SAMPLE COLNUM_PRIMER1 COLNUM_PRIMER2 COLNUM_LOCUS)
 #TODO:I am not using colnumID2 START
 echo "Checking that all columns in metadata are there"
 
@@ -232,6 +232,15 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 ################################################################################
 # Read in primers
 ################################################################################
+## Modify it so it can work with different loci in the same run
+## First get_the loci
+
+  LOCUS=($(awk -F',' -v COLNUM=$COLNUM_LOCUS \
+	  'NR > 1 { print $COLNUM }' $SEQUENCING_METADATA |\
+	  sort | uniq ))
+## For each locus, get the primers and add them to two fasta files: fwd and rev. 
+## We should do this for each library, so there is no interference between libraries and projects sharing a run
+
 	PRIMER1=($(awk -F',' -v COLNUM=$COLNUM_PRIMER1 \
 	  'NR > 1 { print $COLNUM }' $SEQUENCING_METADATA |\
 	  sort | uniq ))
@@ -338,20 +347,51 @@ fi
 
 	  READ1="${PARENT_DIR}/${FILE1[i]}"
 	  READ2="${PARENT_DIR}/${FILE2[i]}"
-
-	  BASE1="${FILE1[i]%.*}"
-	  BASE2="${FILE2[i]%.*}"
-# Subset here to use the subsetting related to the file, and not dependent on the order 
-# of lib names
-
- ID1S=$( awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ID1=$COLNUM_ID1 \
-	' {if ($COLNUM == VALUE) { print  $ID1 }} ' $SEQUENCING_METADATA | uniq)
+	  
+	  # Subset here to use the subsetting related to the file, and not dependent on the order 
+    # of lib names: do this for ID, barcodes and primers
+    
+    ID1S=$( awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ID1=$COLNUM_ID1 \
+	    ' {if ($COLNUM == VALUE) { print  $ID1 }} ' $SEQUENCING_METADATA | uniq)
 	
-	echo ${ID1S}
-	
-	awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ID1=$COLNUM_ID1 \
-	-v ID2=$COLNUM_ID2 -v SAMPLE_NAME=$COLNUM_SAMPLE \
-	' {if ($COLNUM == VALUE) { printf  "ID1=%s;ID2=%s\t%s_%s\t%s\n", $ID1, $ID2, $ID1, $ID2, $SAMPLE_NAME }} ' $SEQUENCING_METADATA >> "${SAMPLE_TRANS_FILE}"
+	   echo ${ID1S}
+	   
+	  # Barcodes
+	  
+	  Barcodes_file="$OUTPUT_DIR"/barcodes_"${ID1S}".fasta
+	  
+	  awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ADAP=$COLNUM_ID2 \
+	    '{if ($COLNUM == VALUE) { printf ">%s\n^%s\n", $ADAP, $ADAP } }' $SEQUENCING_METADATA > "${Barcodes_file}"
+	  
+	  # Primers and loci
+	  primers_file_R1="$OUTPUT_DIR"/primers_"${ID1S}"_R1.fasta
+    primers_file_R2="$OUTPUT_DIR"/primers_"${ID1S}"_R2.fasta
+ 
+    awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v LOCUS=$COLNUM_LOCUS \
+      -v FWD=$COLNUM_PRIMER1 -v REV=$COLNUM_PRIMER2 \
+	    '{if ($COLNUM == VALUE) { print $LOCUS,$FWD,$REV } }' $SEQUENCING_METADATA | sort|uniq > "${OUTPUT_DIR}"/unique_input.txt
+	    
+	  awk -v lib="${primers_file_R1}" '{
+      file = lib ;
+      fwd_header = ">Locus_" $1 "_Fwd";
+      fwd_sequence = $2;
+      rev_header = ">Locus_" $1 "_Rev";
+      rev_sequence = $3;
+      print fwd_header "\n" fwd_sequence "\n" rev_header "\n" rev_sequence >> file }' "${OUTPUT_DIR}"/unique_input.txt
+      
+    awk -v lib="${primers_file_R2}" '{
+      file = lib ;
+      fwd_header = ">Locus_" $1 "_Rev";
+      fwd_sequence = $3;
+      rev_header = ">Locus_" $1 "_Fwd";
+      rev_sequence = $2;
+      print fwd_header "\n" fwd_sequence "\n" rev_header "\n" rev_sequence >> file }' "${OUTPUT_DIR}"/unique_input.txt
+      
+    # Sample map  
+	  
+	  awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ID1=$COLNUM_ID1 \
+	    -v ID2=$COLNUM_ID2 -v SAMPLE_NAME=$COLNUM_SAMPLE \
+	    ' {if ($COLNUM == VALUE) { printf  "ID1=%s;ID2=%s\t%s_%s\t%s\n", $ID1, $ID2, $ID1, $ID2, $SAMPLE_NAME }} ' $SEQUENCING_METADATA >> "${SAMPLE_TRANS_FILE}"
 
 	  mkdir "${OUTPUT_DIR}"/"${ID1S}"
 
@@ -362,124 +402,57 @@ fi
 
 	##First cutdapt:
 	#TODO: use only the number of barcodes used for this Library
-	Barcodes_file="$OUTPUT_DIR"/barcodes_"${ID1S}".fasta
+	
+ # Anchoring the adapters seems like the only option 
+	
+ # Only one round of cutadapt is needed for demultiplexing
+ 
+ cutadapt -g "file:"${Barcodes_file}";min_overlap=8" \
+	  -G "file:"${Barcodes_file}";min_overlap=8" \
+  	-o "${OUTPUT_DIR}"/${ID1S}/${ID1S}_{name}.R1.fastq \
+	  -p "${OUTPUT_DIR}"/${ID1S}/${ID1S}_{name}.R2.fastq \
+	  "${READ1}" "${READ2}" --discard-untrimmed -j 0 -e 1 --pair-adapters 
 
-	awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ADAP=$COLNUM_ID2 \
-	'{if ($COLNUM == VALUE) { printf ">%s\n%s\n", $ADAP, $ADAP } }' $SEQUENCING_METADATA > "${Barcodes_file}"
 
-
-	cutadapt -g file:"${Barcodes_file}" \
-	-o "${OUTPUT_DIR}"/${ID1S}/${ID1S}_round1{name}_round1.1.fastq \
-	-p "${OUTPUT_DIR}"/${ID1S}/${ID1S}_round1{name}_round1.2.fastq \
-	 "${READ1}" "${READ2}" --discard-untrimmed -j 0
-
-
-	#This split each pair of fastqs into as many pairs of fastqs as barcodes are
-	#but only looking at them on the .1 file -> do the same on the other file, and keep
-	#the order of reads similar in both files
-
-		n_files=("${OUTPUT_DIR}"/"${ID1S}"/*round1.2.fastq)
+	n_files=("${OUTPUT_DIR}"/"${ID1S}"/*.R2.fastq)
 		
 		
 		i_count=0
 
-	 for file in "${n_files[@]}"; do
-# We loop through all .2 files
+	 for r2file in "${n_files[@]}"; do
+	 
+    # We loop through all .2 files
 		i_count=$((i_count+1))
- #The barcode detected on the .1 is written in the name, so we now look
- #for that barcode at the beggining of the .2 read
+    #The barcode detected on the .1 is written in the name, so we now look
+    #for that barcode at the beggining of the .2 read
 
-		RIGHT_BARCODE=$(echo ${file} |  awk 'BEGIN {FS="_round1"}; {print $2}')
+		short_r2file=$(basename "${r2file}"| sed 's/.R2.fastq$//')
 
-			short_file=$(basename "${file}")
-
-		r1file=$(echo ${file} | sed 's/.2.fastq/.1.fastq/g' )
-		 	short_r1file=$(basename "${r1file}") # .1.fastq
-	  MID_OUTPUT1="${OUTPUT_DIR}"/"${ID1S}"_"${RIGHT_BARCODE}"_mid.1.fastq
-			short_MID_OUTPUT1=$(basename "${MID_OUTPUT1}") #double trimmed
-	  MID_OUTPUT2="${OUTPUT_DIR}"/"${ID1S}"_"${RIGHT_BARCODE}"_mid.2.fastq #double trimmed
-			short_MID_OUTPUT2=$(basename "${MID_OUTPUT2}")
-		NEW_OUTPUT_Fwd_1="${DEMULT_DIR}"/"${ID1S}"_"${RIGHT_BARCODE}"_Fwd.1.fastq
-			short_NEW_OUTPUT_Fwd_1=$(basename "${NEW_OUTPUT_Fwd_1}")
-		NEW_OUTPUT_Fwd_2="${DEMULT_DIR}"/"${ID1S[i]}"_"${RIGHT_BARCODE}"_Fwd.2.fastq
-			short_NEW_OUTPUT_Fwd_2=$(basename "${NEW_OUTPUT_Fwd_2}")
-		NEW_OUTPUT_Rev_1="${DEMULT_DIR}"/"${ID1S}"_"${RIGHT_BARCODE}"_Rev.1.fastq
-			short_NEW_OUTPUT_Rev_1=$(basename "${NEW_OUTPUT_Rev_1}")
-		NEW_OUTPUT_Rev_2="${DEMULT_DIR}"/"${ID1S}"_"${RIGHT_BARCODE}"_Rev.2.fastq
-			short_NEW_OUTPUT_Rev_2=$(basename "${NEW_OUTPUT_Rev_2}")
+		r1file=$(echo ${r2file} | sed 's/.R2.fastq$/.R1.fastq/g' )
+		short_r1file=$(basename "${r1file}"| sed 's/.R1.fastq$//') 
+	 
 
 		#New messages so it's easier to see the progress of the script
 
 		echo -ne "Working on sample ${i_count} of ${#n_files[@]}"'\r'
 
 		#echo "${short_file}"
-	  nseq_file=$(cat "${file}" | wc -l)
-	  #echo "${nseq_file} reads before retrimming"
-
-
-	  #echo "the other half reads are (.1.)"
-	  #echo "${short_r1file}"
+	  nseq_r1file=$(cat "${r2file}" | wc -l)
+	  
 	  nseq_r1file=$(cat "${r1file}" |  wc -l)
-	  #echo "with ${nseq_r1file} reads"
-
-
-	  #Now use that as an argunment for cutadapt
-	  #echo "this is the right barcode"
-	  #echo ${RIGHT_BARCODE}
-
-# try to make cutadapt quieter
-	  cutadapt -g ^"${RIGHT_BARCODE}" -o "${MID_OUTPUT2}" \
-	  -p "${MID_OUTPUT1}" "${file}" "${r1file}" -j 0 --quiet --discard-untrimmed 2>> "${LOGFILE}"
-
-	  nseq_s2r1file=$(cat "${MID_OUTPUT1}" |  wc -l)
-	  nseq_s2r2file=$(cat "${MID_OUTPUT2}" |  wc -l)
-	  #echo "This is the mid R1 file"
-	  #echo "${short_MID_OUTPUT1}"
-	  #echo "and it has ${nseq_s2r1file} reads after trimming"
-	  #echo "Hopefully the same number of lines as the mid R2 ${nseq_s2r2file}"
-
-
+	  
 	# Now remove the pcr primers
 	# This is an important point for libraries prepared by ligation:
 	# The i7 adapters can ligate on either Fwd or Rev primer end- so you have
 	# roughly half the sequences in one direction and half on the other direction
 	# What to do with them is up to you: we'll generate 4 fastqs per sample
-	#FWD.1
-	#FWD.2
-	#REV.1
-	#REV.2
-	#You can either choose one pair and discard 50% of your data,
-	#Add #rev to the header of those affected and leave them as they are
-	#Add #rev and RC those affected
-	# do the analysis twice
-	#
-	#First remove the primers from .1 and select those from the file and then we'll see
-	#will later assume that if the barcodes were fine, then the primer will be fine too
+	
+	cutadapt -g file:"${primers_file_R1}" -G file:"${primers_file_R2}" --discard-untrimmed\
+	 -o "${OUTPUT_DIR}"/cleaned/${ID1S}/"${short_r1file}"_{name}.R1.fastq \
+	 -p "${OUTPUT_DIR}"/cleaned/${ID1S}/"${short_r2file}"_{name}.R2.fastq \
+	 -j 0 "${r1file}" "${r2file}" --quiet --pair-adapters 2>> "${LOGFILE}"
 
 
-	cutadapt -g file:"${primers_file}" --discard-untrimmed\
-	 -o "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_{name}_clean.1.fastq \
-	 -p "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_{name}_clean.2.fastq \
-	 -j 0 "${MID_OUTPUT1}" "${MID_OUTPUT2}" --quiet 2>> "${LOGFILE}"
-
-
-
-
-	#Now remove the rev primer at the beggining of the .2 for those READS
-	#in which we found the FWD primer at the beggining of .1
-	cutadapt -g "${PRIMER2}" --discard-untrimmed \
-	-o "${NEW_OUTPUT_Fwd_2}" \
-	-p "${NEW_OUTPUT_Fwd_1}" \
-	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq \
-	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq -j 0 --quiet 2>> "${LOGFILE}"
-
-	#Now do similarly for those in which we found rev at the beggining of .1
-
-	cutadapt -g "${PRIMER1}" --discard-untrimmed \
-	-o "${NEW_OUTPUT_Rev_2}" \
-	-p "${NEW_OUTPUT_Rev_1}" \
-	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.2.fastq \
-	"${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.1.fastq -j 0 --quiet 2>> "${LOGFILE}"
 
 
 	nseq_NOF1=$(cat ${NEW_OUTPUT_Fwd_1} | wc -l)
