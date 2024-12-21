@@ -410,14 +410,14 @@ fi
  
  cutadapt -g "file:"${Barcodes_file}";min_overlap=8" \
 	  -G "file:"${Barcodes_file}";min_overlap=8" \
-  	-o "${OUTPUT_DIR}"/${ID1S}/${ID1S}_{name}.R1.fastq \
-	  -p "${OUTPUT_DIR}"/${ID1S}/${ID1S}_{name}.R2.fastq \
+  	-o "${OUTPUT_DIR}"/"${ID1S}"/"${ID1S}"_{name}.R1.fastq \
+	  -p "${OUTPUT_DIR}"/"${ID1S}"/"${ID1S}"_{name}.R2.fastq \
 	  "${READ1}" "${READ2}" --discard-untrimmed -j 0 -e 1 --pair-adapters > "${OUTPUT_DIR}"/cutadapt_logfile.txt
 	  
 	 ## Now process the logfile to get the summary info: 
 	
   if grep -A 2 '^=== \(First\|Second\) read: Adapter' "${OUTPUT_DIR}"/cutadapt_logfile.txt > "${OUTPUT_DIR}"/temp_log.txt; then
-        awk -v Library="$IDS" '
+        awk -v Library="${ID1S}" '
         /^=== (First|Second) read: Adapter/ { 
             split($0, a, " "); 
             read=a[2]; 
@@ -457,8 +457,8 @@ fi
     		echo -ne "Working on sample ${i_count} of ${#n_files[@]}"'\r'
     
     	cutadapt -g file:"${primers_file_R1}" -G file:"${primers_file_R2}" --discard-untrimmed \
-    	 -o "${OUTPUT_DIR}"/cleaned/${ID1S}/"${short_r1file}"_{name}.R1.fastq \
-    	 -p "${OUTPUT_DIR}"/cleaned/${ID1S}/"${short_r2file}"_{name}.R2.fastq \
+    	 -o "${OUTPUT_DIR}"/cleaned/"${ID1S}"/"${short_r1file}"_{name}.R1.fastq \
+    	 -p "${OUTPUT_DIR}"/cleaned/"${ID1S}"/"${short_r2file}"_{name}.R2.fastq \
     	 -j 0 "${r1file}" "${r2file}" --pair-adapters 2 > "${OUTPUT_DIR}"/cutadapt_logfile.txt
     	  
     
