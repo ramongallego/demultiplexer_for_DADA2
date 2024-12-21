@@ -80,6 +80,7 @@ exec > >(tee "${LOGFILE}") 2>&1
 mkdir "${OUTPUT_DIR}"/cleaned
 DEMULT_DIR="${OUTPUT_DIR}"/demultiplexed
 mkdir "${DEMULT_DIR}"
+NOPRIMERS_DIR="${OUTPUT_DIR}"/noprimers
 ################################################################################
 # READ METADATA
 ################################################################################
@@ -335,7 +336,7 @@ fi
 # to get the .1 files trimmed and the .2 selected along
 
 	OUTPUT_SUMMARY="${OUTPUT_DIR}/summary.csv"
-	printf "First_trim_R1,nReads_R1,First_trim_R2,nReads_R2,Second_trim_R1,nReads_StR1,Second_trim_R2,nReads_StR2,NEW_OUTPUT_Fwd_1,nreadsFwd,NEW_OUTPUT_Rev_1,nreadsRev\n" \
+	printf "library_sample,loci,step,nReads\n" \
 	> "${OUTPUT_SUMMARY}"
 
 ################################################################################
@@ -411,7 +412,28 @@ fi
 	  -G "file:"${Barcodes_file}";min_overlap=8" \
   	-o "${OUTPUT_DIR}"/${ID1S}/${ID1S}_{name}.R1.fastq \
 	  -p "${OUTPUT_DIR}"/${ID1S}/${ID1S}_{name}.R2.fastq \
-	  "${READ1}" "${READ2}" --discard-untrimmed -j 0 -e 1 --pair-adapters 
+	  "${READ1}" "${READ2}" --discard-untrimmed -j 0 -e 1 --pair-adapters > "${OUTPUT_DIR}"/cutadapt_logfile.txt
+	  
+	 ## Now process the logfile to get the summary info: 
+	
+  if grep -A 2 '^=== \(First\|Second\) read: Adapter' "${OUTPUT_DIR}"/cutadapt_logfile.txt > "${OUTPUT_DIR}"/temp_log.txt; then
+        awk -v Library="$IDS" '
+        /^=== (First|Second) read: Adapter/ { 
+            split($0, a, " "); 
+            read=a[2]; 
+        }
+        /^Sequence:/ { 
+            split($0, a, " "); 
+            adapter_name=a[2]; 
+            gsub(/;$/, "", adapter_name); 
+            times=a[length(a)-1]; 
+            gsub(/ times$/, "", times); 
+            print Library "_" adapter_name",all_loci,demult_" read "," times;
+        }' "${OUTPUT_DIR}"/temp_log.txt >> "${OUTPUT_SUMMARY}"
+  else
+        echo "iteration $IDS,Error,Error,Error" >> "${OUTPUT_SUMMARY}"
+  fi
+
 
 
 	n_files=("${OUTPUT_DIR}"/"${ID1S}"/*.R2.fastq)
@@ -419,75 +441,54 @@ fi
 		
 		i_count=0
 
-	 for r2file in "${n_files[@]}"; do
+    for r2file in "${n_files[@]}"; do
 	 
-    # We loop through all .2 files
-		i_count=$((i_count+1))
-    #The barcode detected on the .1 is written in the name, so we now look
-    #for that barcode at the beggining of the .2 read
-
-		short_r2file=$(basename "${r2file}"| sed 's/.R2.fastq$//')
-
-		r1file=$(echo ${r2file} | sed 's/.R2.fastq$/.R1.fastq/g' )
-		short_r1file=$(basename "${r1file}"| sed 's/.R1.fastq$//') 
-	 
-
-		#New messages so it's easier to see the progress of the script
-
-		echo -ne "Working on sample ${i_count} of ${#n_files[@]}"'\r'
-
-		#echo "${short_file}"
-	  nseq_r1file=$(cat "${r2file}" | wc -l)
-	  
-	  nseq_r1file=$(cat "${r1file}" |  wc -l)
-	  
-	# Now remove the pcr primers
-	# This is an important point for libraries prepared by ligation:
-	# The i7 adapters can ligate on either Fwd or Rev primer end- so you have
-	# roughly half the sequences in one direction and half on the other direction
-	# What to do with them is up to you: we'll generate 4 fastqs per sample
-	
-	cutadapt -g file:"${primers_file_R1}" -G file:"${primers_file_R2}" --discard-untrimmed\
-	 -o "${OUTPUT_DIR}"/cleaned/${ID1S}/"${short_r1file}"_{name}.R1.fastq \
-	 -p "${OUTPUT_DIR}"/cleaned/${ID1S}/"${short_r2file}"_{name}.R2.fastq \
-	 -j 0 "${r1file}" "${r2file}" --quiet --pair-adapters 2>> "${LOGFILE}"
-
-
-
-
-	nseq_NOF1=$(cat ${NEW_OUTPUT_Fwd_1} | wc -l)
-	nseq_NOR1=$(cat ${NEW_OUTPUT_Rev_1} | wc -l)
-
-
-	#print the summary information
-
-	  printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
-	  "${short_r1file}" "${nseq_r1file}" \
-	  "${short_file}" "${nseq_file}" \
-	  "${short_MID_OUTPUT1}" "${nseq_s2r1file}" \
-	  "${short_MID_OUTPUT2}" "${nseq_s2r2file}" \
-		"${short_NEW_OUTPUT_Fwd_1}" "${nseq_NOF1}" \
-	  "${short_NEW_OUTPUT_Rev_1}" "${nseq_NOR1}" >> "${OUTPUT_SUMMARY}"
-	  # now clean the middle FILES - checking first if they do exist
-	  rm "${file}"
-	  rm "${r1file}"
-		if [[ -s "${MID_OUTPUT1}" ]]; then
-			rm "${MID_OUTPUT1}"
-			rm "${MID_OUTPUT2}"
-		fi
-		if [[ -s "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq ]]; then
-			rm "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.2.fastq
-			rm "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_FWD_clean.1.fastq
-		fi
-		if [[ -s "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.2.fastq ]]; then
-			rm "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.2.fastq
-			rm "${OUTPUT_DIR}"/cleaned/${ID1S}/${ID1S}-"${RIGHT_BARCODE}"_REV_clean.1.fastq
-		fi
-
-	  done
+        # We loop through all .2 files
+    		i_count=$((i_count+1))
+    
+    		short_r2file=$(basename "${r2file}"| sed 's/.R2.fastq$//')
+    
+    		r1file=$(echo ${r2file} | sed 's/.R2.fastq$/.R1.fastq/g' )
+    		short_r1file=$(basename "${r1file}"| sed 's/.R1.fastq$//') 
+    	 
+    
+    		#New messages so it's easier to see the progress of the script
+    
+    		echo -ne "Working on sample ${i_count} of ${#n_files[@]}"'\r'
+    
+    	cutadapt -g file:"${primers_file_R1}" -G file:"${primers_file_R2}" --discard-untrimmed \
+    	 -o "${OUTPUT_DIR}"/cleaned/${ID1S}/"${short_r1file}"_{name}.R1.fastq \
+    	 -p "${OUTPUT_DIR}"/cleaned/${ID1S}/"${short_r2file}"_{name}.R2.fastq \
+    	 -j 0 "${r1file}" "${r2file}" --pair-adapters 2 > "${OUTPUT_DIR}"/cutadapt_logfile.txt
+    	  
+    
+    ## Now process the logfile to get the summary info: 
+    	
+     if grep -A 2 '^=== \(First\|Second\) read: Adapter' "${OUTPUT_DIR}"/cutadapt_logfile.txt > "${OUTPUT_DIR}"/temp_log.txt; then
+            awk  Sample="${short_r1file}" '
+            /^=== (First|Second) read: Adapter/ { 
+                split($0, a, " "); 
+                read=a[2]; 
+            }
+            /^Sequence:/ { 
+                split($0, a, " "); 
+                primer_name=a[2]; 
+                gsub(/;$/, "", adapter_name); 
+                times=a[length(a)-1]; 
+                gsub(/ times$/, "", times); 
+                print Sample "," primer_name", demult_" read "," times;
+            }' "${OUTPUT_DIR}"/temp_log.txt >> "${OUTPUT_SUMMARY}"
+        else
+            echo "iteration $IDS,Error,Error,Error" >> "${OUTPUT_SUMMARY}"
+        fi
+        
+        mv "${r1file}" "${r2file}" "${DEMULT_DIR}"
+        mv "${OUTPUT_DIR}"/cleaned/${ID1S}/* "${NOPRIMERS_DIR}"
+    
+    done # This finishes the for loop for all demulted files, getting the primers out
 	  rm -r "${OUTPUT_DIR}"/"${ID1S}"
 
-	done
+	done # This finishes the for loop for all libraries
 
 	rm -rf "${OUTPUT_DIR}"/cleaned
 
