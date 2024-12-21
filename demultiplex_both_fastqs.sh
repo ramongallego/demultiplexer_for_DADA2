@@ -81,6 +81,7 @@ mkdir "${OUTPUT_DIR}"/cleaned
 DEMULT_DIR="${OUTPUT_DIR}"/demultiplexed
 mkdir "${DEMULT_DIR}"
 NOPRIMERS_DIR="${OUTPUT_DIR}"/noprimers
+mkdir "${NOPRIMERS_DIR}"
 ################################################################################
 # READ METADATA
 ################################################################################
