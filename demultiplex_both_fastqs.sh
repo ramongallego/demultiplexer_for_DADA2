@@ -461,7 +461,7 @@ fi
     	cutadapt -g file:"${primers_file_R1}" -G file:"${primers_file_R2}" --discard-untrimmed \
     	 -o "${OUTPUT_DIR}"/cleaned/"${ID1S}"/"${short_r1file}"_{name}.R1.fastq \
     	 -p "${OUTPUT_DIR}"/cleaned/"${ID1S}"/"${short_r2file}"_{name}.R2.fastq \
-    	 -j 0 "${r1file}" "${r2file}" --pair-adapters 2 > "${OUTPUT_DIR}"/cutadapt_logfile.txt
+    	 -j 0 "${r1file}" "${r2file}" --pair-adapters > "${OUTPUT_DIR}"/cutadapt_logfile.txt
     	  
     
     ## Now process the logfile to get the summary info: 
