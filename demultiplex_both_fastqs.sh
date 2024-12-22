@@ -476,11 +476,13 @@ fi
             awk  -v Sample="${short_r1file}" '
             /^=== (First|Second) read: Adapter/ { 
                 split($0, a, " "); 
-                read=a[2]; 
+                read=a[2];
+				primer_name=a[5];
+
             }
             /^Sequence:/ { 
                 split($0, a, " "); 
-                primer_name=a[2]; 
+                 
                 gsub(/;$/, "", adapter_name); 
                 times=a[length(a)-1]; 
                 gsub(/ times$/, "", times); 
