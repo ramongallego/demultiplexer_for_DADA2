@@ -439,7 +439,13 @@ fi
 
 		n_files=("${OUTPUT_DIR}"/"${ID1S}"/*.R2.fastq)
 		
-		echo "${n_files[@]}"
+		for file in "${n_files[@]}"; do
+   			 if [[ -f "$file" ]]; then
+        echo "File exists: $file"
+    			else
+        echo "File does not exist: $file"
+   					 fi
+		done
 		
 		i_count=0
 
