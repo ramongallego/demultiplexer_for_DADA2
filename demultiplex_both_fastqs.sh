@@ -367,7 +367,7 @@ fi
 	  
 	  # Primers and loci
 	  primers_file_R1="$OUTPUT_DIR"/primers_"${ID1S}"_R1.fasta
-    primers_file_R2="$OUTPUT_DIR"/primers_"${ID1S}"_R2.fasta
+      primers_file_R2="$OUTPUT_DIR"/primers_"${ID1S}"_R2.fasta
  
     awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v LOCUS=$COLNUM_LOCUS \
       -v FWD=$COLNUM_PRIMER1 -v REV=$COLNUM_PRIMER2 \
@@ -405,40 +405,41 @@ fi
 	##First cutdapt:
 	#TODO: use only the number of barcodes used for this Library
 	
- # Anchoring the adapters seems like the only option 
+	# Anchoring the adapters seems like the only option 
+		
+	# Only one round of cutadapt is needed for demultiplexing
 	
- # Only one round of cutadapt is needed for demultiplexing
- 
- cutadapt -g "file:"${Barcodes_file}";min_overlap=8" \
-	  -G "file:"${Barcodes_file}";min_overlap=8" \
-  	-o "${OUTPUT_DIR}"/"${ID1S}"/"${ID1S}"_{name}.R1.fastq \
-	  -p "${OUTPUT_DIR}"/"${ID1S}"/"${ID1S}"_{name}.R2.fastq \
-	  "${READ1}" "${READ2}" --discard-untrimmed -j 0 -e 1 --pair-adapters > "${OUTPUT_DIR}"/cutadapt_logfile.txt
+	cutadapt -g "file:"${Barcodes_file}";min_overlap=8" \
+		-G "file:"${Barcodes_file}";min_overlap=8" \
+		-o "${OUTPUT_DIR}"/"${ID1S}"/"${ID1S}"_{name}.R1.fastq \
+		-p "${OUTPUT_DIR}"/"${ID1S}"/"${ID1S}"_{name}.R2.fastq \
+		"${READ1}" "${READ2}" --discard-untrimmed -j 0 -e 1 --pair-adapters > "${OUTPUT_DIR}"/cutadapt_logfile.txt
 	  
 	 ## Now process the logfile to get the summary info: 
 	
-  if grep -A 2 '^=== \(First\|Second\) read: Adapter' "${OUTPUT_DIR}"/cutadapt_logfile.txt > "${OUTPUT_DIR}"/temp_log.txt; then
-        awk -v Library="${ID1S}" '
-        /^=== (First|Second) read: Adapter/ { 
-            split($0, a, " "); 
-            read=a[2]; 
-        }
-        /^Sequence:/ { 
-            split($0, a, " "); 
-            adapter_name=a[2]; 
-            gsub(/;$/, "", adapter_name); 
-            times=a[length(a)-1]; 
-            gsub(/ times$/, "", times); 
-            print Library "_" adapter_name",all_loci,demult_" read "," times;
-        }' "${OUTPUT_DIR}"/temp_log.txt >> "${OUTPUT_SUMMARY}"
-  else
-        echo "iteration $IDS,Error,Error,Error" >> "${OUTPUT_SUMMARY}"
-  fi
+			if grep -A 2 '^=== \(First\|Second\) read: Adapter' "${OUTPUT_DIR}"/cutadapt_logfile.txt > "${OUTPUT_DIR}"/temp_log.txt; then
+					awk -v Library="${ID1S}" '
+					/^=== (First|Second) read: Adapter/ { 
+						split($0, a, " "); 
+						read=a[2]; 
+					}
+					/^Sequence:/ { 
+						split($0, a, " "); 
+						adapter_name=a[2]; 
+						gsub(/;$/, "", adapter_name); 
+						times=a[length(a)-1]; 
+						gsub(/ times$/, "", times); 
+						print Library "_" adapter_name",all_loci,demult_" read "," times;
+					}' "${OUTPUT_DIR}"/temp_log.txt >> "${OUTPUT_SUMMARY}"
+			else
+					echo "iteration $IDS,Error,Error,Error" >> "${OUTPUT_SUMMARY}"
+			fi
 
 
 
-	n_files=("${OUTPUT_DIR}"/"${ID1S}"/*.R2.fastq)
+		n_files=("${OUTPUT_DIR}"/"${ID1S}"/*.R2.fastq)
 		
+		echo "${n_files[@]}"
 		
 		i_count=0
 
