@@ -473,7 +473,7 @@ fi
     ## Now process the logfile to get the summary info: 
     	
      if grep -A 2 '^=== \(First\|Second\) read: Adapter' "${OUTPUT_DIR}"/cutadapt_logfile.txt > "${OUTPUT_DIR}"/temp_log.txt; then
-            awk  Sample="${short_r1file}" '
+            awk  -v Sample="${short_r1file}" '
             /^=== (First|Second) read: Adapter/ { 
                 split($0, a, " "); 
                 read=a[2]; 
