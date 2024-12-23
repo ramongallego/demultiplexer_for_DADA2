@@ -42,7 +42,7 @@ files.noprimers |>
 # Keep only real filenames and complete cases
 
 files.noprimers |>
- filter(if_all(any_of(Fwd.R1 ,  Fwd.R2, Rev.R1, Rev.R2), ~ !is.na(.x))) |>
+ filter(if_all(any_of(c(Fwd.R1 ,  Fwd.R2, Rev.R1, Rev.R2)), ~ !is.na(.x))) |>
  inner_join(sample.map |> 
  select(fastq_header, Sample )) -> files.noprimers
 
