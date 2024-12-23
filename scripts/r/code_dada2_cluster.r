@@ -149,7 +149,7 @@ goodqs|>
   unnest(nochim) |> 
   select(Sample,locus, sequence, nReads = abundance ) -> Abundance_table
 
-if ( params$hash==TRUE) {
+if ( grepl ("yes", params$hash, ignore.case = TRUE)) {
 
   Abundance_table |> 
   distinct(sequence) |> 
