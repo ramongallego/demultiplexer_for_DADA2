@@ -497,9 +497,7 @@ else #In case you already demultiplexed your samples, then cp the files you need
 	cp "${DEMULT_OUTPUT}"/sample_trans.tmp "${OUTPUT_DIR}"
 	cp "${DEMULT_OUTPUT}"/barcodes.fasta "${OUTPUT_DIR}"
 	cp "${DEMULT_OUTPUT}"/summary.csv "${OUTPUT_DIR}"
-	cp "${DEMULT_OUTPUT}"/pcr_primers.fasta "${OUTPUT_DIR}"
-
-	DEMULT_DIR="${DEMULT_OUTPUT}"/demultiplexed
+	
 	NOPRIMERS_DIR="${DEMULT_OUTPUT}"/noprimers
 
 fi #This finishes the control flow in case you already demultiplexed
