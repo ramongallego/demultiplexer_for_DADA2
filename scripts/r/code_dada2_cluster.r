@@ -30,21 +30,21 @@ path1 <- params$fastqs
 
 
 ## ----listing files------------------------------------------------------------
-files <- tibble (files = list.files(path1, full.names = TRUE))
+files.noprimers <- tibble (files = list.files(path1, full.names = TRUE))
 
-files |> 
+files.noprimers |> 
   mutate(locus = str_extract(files, "(?<=_Locus_)[^_]+"),
          direction = str_extract(files, "(Fwd|Rev)\\.R[12]"),
          fastq_header = str_extract(files, "(?<=/)[^_]+_[^_]+")) |>
   pivot_wider (names_from = "direction",
-               values_from = "files") -> files
+               values_from = "files") -> files.noprimers
 
 # Keep only real filenames and complete cases
 
-files |>
- filter (complete.cases(Fwd.R1 ,  Fwd.R2, Rev.R1, Rev.R2)) |>
-   inner_join(sample.map |> 
-                select(fastq_header, Sample )) -> files
+files.noprimers |>
+ filter(if_all(any_of(Fwd.R1 ,  Fwd.R2, Rev.R1, Rev.R2), ~ !is.na(.x))) |>
+ inner_join(sample.map |> 
+ select(fastq_header, Sample )) -> files.noprimers
 
 
 ## ----filter and trim----------------------------------------------------------
@@ -63,23 +63,23 @@ filt_function <- function(file1, file2){
 
 ## TODO implement futuremap for multicore usage
 
-files|> 
+files.noprimers|> 
   mutate(filtF1s = str_replace(Fwd.R1, "^noprimers", filt_path),
          filtF2s = str_replace(Fwd.R2, "^noprimers", filt_path),
          filtR1s = str_replace(Rev.R1, "^noprimers", filt_path),
          filtR2s = str_replace(Rev.R2, "^noprimers", filt_path),
          outFs = map2_df (Fwd.R1, Fwd.R2, filt_function ),
-         outRs = map2_df (Rev.R1, Rev.R2, filt_function)) -> files
+         outRs = map2_df (Rev.R1, Rev.R2, filt_function)) -> files.noprimers
 
 # discard those with fewer than 100 seqs passing either filter
 
-files |>
+files.noprimers |>
  filter (outFs$reads.out >100 & outRs$reads.out > 100) -> goodqs
 
- files |> 
+ files.noprimers |> 
   anti_join(goodqs) -> discarded
 
-rm(files)
+rm(files.noprimers)
 
 #### Learn 4 errors objects: these are a function of the NEXTSEQ run and not of 
 #### the sample, so it does not make sense to calculate them once per row.
