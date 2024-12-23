@@ -62,8 +62,9 @@ filt_function <- function(file1, file2){
     }
 
 ## TODO implement futuremap for multicore usage
+files.noprimers
 
-files.noprimers|> 
+files.noprimers |> 
   mutate(filtF1s = str_replace(Fwd.R1, "^noprimers", filt_path),
          filtF2s = str_replace(Fwd.R2, "^noprimers", filt_path),
          filtR1s = str_replace(Rev.R1, "^noprimers", filt_path),
