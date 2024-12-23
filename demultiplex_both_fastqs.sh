@@ -337,7 +337,7 @@ fi
 # to get the .1 files trimmed and the .2 selected along
 
 	OUTPUT_SUMMARY="${OUTPUT_DIR}/summary.csv"
-	printf "library_sample,loci,step,nReads\n" \
+	printf "fastq_header,locus,step,nReads\n" \
 	> "${OUTPUT_SUMMARY}"
 
 ################################################################################
@@ -413,39 +413,31 @@ fi
 		-G "file:"${Barcodes_file}";min_overlap=8" \
 		-o "${OUTPUT_DIR}"/"${ID1S}"/"${ID1S}"_{name}.R1.fastq \
 		-p "${OUTPUT_DIR}"/"${ID1S}"/"${ID1S}"_{name}.R2.fastq \
-		"${READ1}" "${READ2}" --discard-untrimmed -j 0 -e 1 --pair-adapters > "${OUTPUT_DIR}"/cutadapt_logfile.txt
+		"${READ1}" "${READ2}" --discard-untrimmed -j 0 -e 1 --pair-adapters > "${OUTPUT_DIR}"/cutadapt_logfiledemult.txt
 	  
 	 ## Now process the logfile to get the summary info: 
 	
-			if grep -A 2 '^=== \(First\|Second\) read: Adapter' "${OUTPUT_DIR}"/cutadapt_logfile.txt > "${OUTPUT_DIR}"/temp_log.txt; then
+			if grep -A 2 '^=== First read: Adapter' "${OUTPUT_DIR}"/cutadapt_logfiledemult.txt > "${OUTPUT_DIR}"/temp_log.txt; then
 					awk -v Library="${ID1S}" '
-					/^=== (First|Second) read: Adapter/ { 
-						split($0, a, " "); 
-						read=a[2]; 
+					/^=== First read: Adapter/ { 
+					split($0, a, " "); 
+					adapter_name=a[5];
+
 					}
 					/^Sequence:/ { 
 						split($0, a, " "); 
-						adapter_name=a[2]; 
-						gsub(/;$/, "", adapter_name); 
 						times=a[length(a)-1]; 
 						gsub(/ times$/, "", times); 
-						print Library "_" adapter_name",all_loci,demult_" read "," times;
+						print Library "_" adapter_name",all_loci,demultiplexing," times;
 					}' "${OUTPUT_DIR}"/temp_log.txt >> "${OUTPUT_SUMMARY}"
 			else
-					echo "iteration $IDS,Error,Error,Error" >> "${OUTPUT_SUMMARY}"
+					echo "Library $IDS,Error,Error,Error" >> "${OUTPUT_SUMMARY}"
 			fi
 
 
 
 		n_files=("${OUTPUT_DIR}"/"${ID1S}"/*.R2.fastq)
 		
-		for file in "${n_files[@]}"; do
-   			 if [[ -f "$file" ]]; then
-        echo "File exists: $file"
-    			else
-        echo "File does not exist: $file"
-   					 fi
-		done
 		
 		i_count=0
 
@@ -472,12 +464,11 @@ fi
     
     ## Now process the logfile to get the summary info: 
     	
-     if grep -A 2 '^=== \(First\|Second\) read: Adapter' "${OUTPUT_DIR}"/cutadapt_logfile.txt > "${OUTPUT_DIR}"/temp_log.txt; then
+     if grep -A 2 '^=== First read: Adapter' "${OUTPUT_DIR}"/cutadapt_logfile.txt > "${OUTPUT_DIR}"/temp_log.txt; then
             awk  -v Sample="${short_r1file}" '
-            /^=== (First|Second) read: Adapter/ { 
+            /^=== First read: Adapter/ { 
                 split($0, a, " "); 
-                read=a[2];
-				primer_name=a[5];
+                primer_name=a[5];
 
             }
             /^Sequence:/ { 
@@ -486,7 +477,7 @@ fi
                 gsub(/;$/, "", adapter_name); 
                 times=a[length(a)-1]; 
                 gsub(/ times$/, "", times); 
-                print Sample "," primer_name", demult_" read "," times;
+                print Sample "," primer_name",noprimer_" read "," times;
             }' "${OUTPUT_DIR}"/temp_log.txt >> "${OUTPUT_SUMMARY}"
         else
             echo "iteration $IDS,Error,Error,Error" >> "${OUTPUT_SUMMARY}"
@@ -509,25 +500,14 @@ else #In case you already demultiplexed your samples, then cp the files you need
 	cp "${DEMULT_OUTPUT}"/pcr_primers.fasta "${OUTPUT_DIR}"
 
 	DEMULT_DIR="${DEMULT_OUTPUT}"/demultiplexed
+	NOPRIMERS_DIR="${DEMULT_OUTPUT}"/noprimers
 
 fi #This finishes the control flow in case you already demultiplexed
 # We are selecting a pair of fastq files so we can check the direction of the
 # ASVs
-FILE1=($(awk -F',' -v COLNUM=$COLNUM_FILE1 \
-	'NR>1 {  print $COLNUM }' $SEQUENCING_METADATA |\
-	sort | uniq))
 
-FILE2=($(awk -F',' -v COLNUM=$COLNUM_FILE2 \
-	'NR>1 {print $COLNUM}' $SEQUENCING_METADATA |\
-	sort | uniq ))
-READ1="${PARENT_DIR}/${FILE1[1]}"
-READ2="${PARENT_DIR}/${FILE2[1]}"
-
-module rm cutadapt/4.1
 
 if [[ "${SEARCH_ASVs}" = "YES" ]]; then
-	echo "This is read1 ${READ1}"
 	module load R/4.3.1
-	Rscript "${SCRIPT_DIR}"/r/code_dada2_cluster.r "${OUTPUT_DIR}" "${DEMULT_DIR}" "${SCRIPT_DIR}" "${USE_HASH}" "${READ1}" "${READ2}"\
-	"${ADD_TO_PREVIOUS}" "${FORMER_HASH}" "${FORMER_ABUNDANCE}" "${LOG_FILE}"
+	Rscript "${SCRIPT_DIR}"/r/code_dada2_cluster.r "${OUTPUT_DIR}" "${NOPRIMERS_DIR}" "${USE_HASH}" 
 fi
