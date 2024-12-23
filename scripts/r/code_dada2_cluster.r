@@ -32,6 +32,8 @@ path1 <- params$fastqs
 ## ----listing files------------------------------------------------------------
 files.noprimers <- tibble (files = list.files(path1, full.names = TRUE))
 
+files.noprimers
+
 files.noprimers |> 
   mutate(locus = str_extract(files, "(?<=_Locus_)[^_]+"),
          direction = str_extract(files, "(Fwd|Rev)\\.R[12]"),
