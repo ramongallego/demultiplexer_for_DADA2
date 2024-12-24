@@ -7,7 +7,7 @@ params <- list(folder =arguments[1],
  hash = arguments[3],
  fastqs = arguments[2])
 
- parallel::detectCores()
+ 
 
 ## ----setup, include=FALSE-----------------------------------------------------
 #TODO: make sure the Rscript uses all allocated resources
@@ -21,8 +21,9 @@ library (Biostrings)
 library (digest)
 library (insect)
 library (furrr)
+library (tictoc)
 
-
+n_cores <- availableCores()
 
 sample.map <- read_delim(file.path(params$folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
 print("The sample map looks like this")
@@ -72,18 +73,20 @@ filt_function <- function(file1, file2){
         as_tibble()
     }
 
-## TODO implement futuremap for multicore usage
+## TODO implement futuremap for multicore usage - testing now
 
-
+plan(multisession, workers = n_cores/16)
+tic("filtering")
 files.noprimers |> 
   mutate(filtF1s = file.path(filt_path,basename(Fwd.R1)),
          filtF2s = file.path(filt_path,basename(Fwd.R2)),
          filtR1s = file.path(filt_path,basename(Rev.R1)),
          filtR2s = file.path(filt_path,basename(Rev.R2)),
-         outFs = map2_df (Fwd.R1, Fwd.R2, filt_function ),
-         outRs = map2_df (Rev.R1, Rev.R2, filt_function)) -> files.noprimers
+         outFs = future_map2_dfc (Fwd.R1, Fwd.R2, filt_function ),
+         outRs = future_map2_dfc (Rev.R1, Rev.R2, filt_function)) -> files.noprimers
 
 # discard those with fewer than 100 seqs passing either filter
+toc()
 
 files.noprimers |>
  filter (outFs$reads.out >100 & outRs$reads.out > 100) -> goodqs
@@ -97,18 +100,23 @@ rm(files.noprimers)
 #### the sample, so it does not make sense to calculate them once per row.
 #### We need to point towards the filtered files
 
-## ----learning errors, echo=T--------------------------------------------------
+## ----learning errors, echo=T- this is so intensive I would rather use all cores on each error calculation-------------------------------------------------
+
+tic("Learning errors")
+
 errF1 <- learnErrors(goodqs$filtF1s, multithread=TRUE,verbose = 0, nbases = 100e6)
 errF2 <- learnErrors(goodqs$filtF2s, multithread=TRUE,verbose = 0, nbases = 100e6)
 errR1 <- learnErrors(goodqs$filtR1s, multithread=TRUE,verbose = 0, nbases = 100e6)
 errR2 <- learnErrors(goodqs$filtR2s, multithread=TRUE,verbose = 0, nbases = 100e6)
 
+toc()
 # Write errors to csv to see if they matter at all
 tosave <- list(errF1, errF2, errR1, errR2)
 
 saveRDS(tosave, file = "all.errors.rds")
 
 ## ----dereplication, echo=F,message=FALSE--------------------------------------
+tic("Dereplicating")
 goodqs |> 
   mutate (across( 
                   starts_with("filt"),
@@ -116,9 +124,10 @@ goodqs |>
                   .names = "{gsub('filt', 'derep', .col)}" # Rename by replacing "filt" with "derep"
     )
   ) -> goodqs
-
+toc()
 ## ----dadaing, message=FALSE---------------------------------------------------
 
+tic("dada")
 goodqs |> 
   mutate (
           dadaF1s = map(derepF1s, ~dada(.x, err = errF1, multithread = TRUE)),
@@ -128,10 +137,10 @@ goodqs |>
 
 ## TODO: do this only if you have a HOARD=yes From here onwards takes very little time
 saveRDS(goodqs, file = "tosave.rds")
-
+toc()
 
 ## ----merging pairs------------------------------------------------------------
-
+tic("merging")
 goodqs |>
   mutate(mergersF = pmap(.l = list(dadaF1s,derepF1s, dadaF2s,derepF2s), 
                          .f = mergePairs,
@@ -139,7 +148,7 @@ goodqs |>
          mergersR = pmap(.l = list(dadaR1s,derepR1s, dadaR2s,derepR2s), 
                          .f = mergePairs,
                          minOverlap = 10)) -> goodqs
-
+toc()
 
 ## merging F and R , and chimeras1
 
