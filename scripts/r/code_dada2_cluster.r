@@ -7,6 +7,8 @@ params <- list(folder =arguments[1],
  hash = arguments[3],
  fastqs = arguments[2])
 
+ params
+
 ## ----setup, include=FALSE-----------------------------------------------------
 #TODO: make sure the Rscript uses all allocated resources
 
