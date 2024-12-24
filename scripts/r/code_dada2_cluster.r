@@ -32,12 +32,11 @@ path1 <- params$fastqs
 ## ----listing files------------------------------------------------------------
 files.noprimers <- tibble (files = list.files(path1, full.names = TRUE))
 
-files.noprimers
 
 files.noprimers |> 
   mutate(locus = str_extract(files, "(?<=_Locus_)[^_]+"),
          direction = str_extract(files, "(Fwd|Rev)\\.R[12]"),
-         fastq_header = str_extract(files, "(?<=/)[^_]+_[^_]+")) |>
+         fastq_header = str_extract(basename(files), "^[^_]+_[^_]+")) |>
   pivot_wider (names_from = "direction",
                values_from = "files") -> files.noprimers
 
@@ -64,7 +63,7 @@ filt_function <- function(file1, file2){
     }
 
 ## TODO implement futuremap for multicore usage
-files.noprimers
+
 
 files.noprimers |> 
   mutate(filtF1s = str_replace(Fwd.R1, "^noprimers", filt_path),
