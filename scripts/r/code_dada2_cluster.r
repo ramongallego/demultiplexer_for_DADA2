@@ -74,7 +74,7 @@ filt_function <- function(file1, file2){
 
 
 files.noprimers |> 
-  mutate(filtF1s = file.path(filt_path,basename(Fwd.R1))
+  mutate(filtF1s = file.path(filt_path,basename(Fwd.R1)),
          filtF2s = file.path(filt_path,basename(Fwd.R2)),
          filtR1s = file.path(filt_path,basename(Rev.R1)),
          filtR2s = file.path(filt_path,basename(Rev.R2)),
