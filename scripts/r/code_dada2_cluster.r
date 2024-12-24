@@ -35,7 +35,7 @@ files.noprimers <- tibble (files = list.files(path1, full.names = TRUE))
 
 print("These are the demulted files")
 files.noprimers
-print()
+
 files.noprimers |> 
   mutate(locus = str_extract(files, "(?<=_Locus_)[^_]+"),
          direction = str_extract(files, "(Fwd|Rev)\\.R[12]"),
@@ -46,7 +46,7 @@ files.noprimers |>
 # Keep only real filenames and complete cases
 print("Now there should be four files per sample/locus")
 files.noprimers
-print()
+
 
 files.noprimers |>
  drop_na() |>
@@ -55,7 +55,7 @@ files.noprimers |>
 
 print("We should have reduced the dataset to those matching the sample map and added the real sample names")
 files.noprimers
-print()
+
 ## ----filter and trim----------------------------------------------------------
 filt_path <- file.path(params$folder, "/filtered") # Place filtered files in filtered/ subdirectory
 
