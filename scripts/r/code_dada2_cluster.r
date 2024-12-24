@@ -22,7 +22,8 @@ library (furrr)
 
 
 
-sample.map <- read_delim(paste0(params$folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
+sample.map <- read_delim(file.path(params$folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
+print("The sample map looks like this")
 head (sample.map)
 
 path1 <- params$fastqs
@@ -32,7 +33,9 @@ path1 <- params$fastqs
 ## ----listing files------------------------------------------------------------
 files.noprimers <- tibble (files = list.files(path1, full.names = TRUE))
 
-
+print("These are the demulted files")
+files.noprimers
+print()
 files.noprimers |> 
   mutate(locus = str_extract(files, "(?<=_Locus_)[^_]+"),
          direction = str_extract(files, "(Fwd|Rev)\\.R[12]"),
@@ -41,19 +44,24 @@ files.noprimers |>
                values_from = "files") -> files.noprimers
 
 # Keep only real filenames and complete cases
+print("Now there should be four files per sample/locus")
+files.noprimers
+print()
 
 files.noprimers |>
  drop_na() |>
  inner_join(sample.map |> 
- select(fastq_header, Sample )) -> files.noprimers
+             select(fastq_header, Sample )) -> files.noprimers
 
-
+print("We should have reduced the dataset to those matching the sample map and added the real sample names")
+files.noprimers
+print()
 ## ----filter and trim----------------------------------------------------------
 filt_path <- file.path(params$folder, "/filtered") # Place filtered files in filtered/ subdirectory
 
 filt_function <- function(file1, file2){
-  filt1s <- str_replace(file1, "^noprimers", filt_path)
-  filt2s <- str_replace(file2, "^noprimers", filt_path)
+  filt1s <- file.path(filt_path,basename(file1))
+  filt2s <- file.path(filt_path,basename(file2))
         filterAndTrim(file1, filt1s, file2, filt2s, 
                       truncLen = c(220, 130), 
                       maxN=0, maxEE=c(2,2),
@@ -66,10 +74,10 @@ filt_function <- function(file1, file2){
 
 
 files.noprimers |> 
-  mutate(filtF1s = str_replace(Fwd.R1, "^noprimers", filt_path),
-         filtF2s = str_replace(Fwd.R2, "^noprimers", filt_path),
-         filtR1s = str_replace(Rev.R1, "^noprimers", filt_path),
-         filtR2s = str_replace(Rev.R2, "^noprimers", filt_path),
+  mutate(filtF1s = file.path(filt_path,basename(Fwd.R1))
+         filtF2s = file.path(filt_path,basename(Fwd.R2)),
+         filtR1s = file.path(filt_path,basename(Rev.R1)),
+         filtR2s = file.path(filt_path,basename(Rev.R2)),
          outFs = map2_df (Fwd.R1, Fwd.R2, filt_function ),
          outRs = map2_df (Rev.R1, Rev.R2, filt_function)) -> files.noprimers
 
