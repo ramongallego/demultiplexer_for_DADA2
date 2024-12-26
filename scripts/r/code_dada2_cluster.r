@@ -82,8 +82,8 @@ files.noprimers |>
          filtF2s = file.path(filt_path,basename(Fwd.R2)),
          filtR1s = file.path(filt_path,basename(Rev.R1)),
          filtR2s = file.path(filt_path,basename(Rev.R2)),
-         outFs = future_map2_dfc (Fwd.R1, Fwd.R2, filt_function ),
-         outRs = future_map2_dfc (Rev.R1, Rev.R2, filt_function)) -> files.noprimers
+         outFs = future_map2_dfr (Fwd.R1, Fwd.R2, filt_function ),
+         outRs = future_map2_dfr (Rev.R1, Rev.R2, filt_function)) -> files.noprimers
 
 # discard those with fewer than 100 seqs passing either filter
 toc()
