@@ -20,7 +20,6 @@ library (dada2)
 library (Biostrings)
 library (digest)
 library (insect)
-library (furrr)
 library (tictoc)
 
 n_cores <- availableCores()
@@ -75,15 +74,15 @@ filt_function <- function(file1, file2){
 
 ## TODO implement futuremap for multicore usage - testing now
 
-plan(multisession, workers = n_cores/16)
+
 tic("filtering")
 files.noprimers |> 
   mutate(filtF1s = file.path(filt_path,basename(Fwd.R1)),
          filtF2s = file.path(filt_path,basename(Fwd.R2)),
          filtR1s = file.path(filt_path,basename(Rev.R1)),
          filtR2s = file.path(filt_path,basename(Rev.R2)),
-         outFs = future_map2_dfr (Fwd.R1, Fwd.R2, filt_function ),
-         outRs = future_map2_dfr (Rev.R1, Rev.R2, filt_function)) -> files.noprimers
+         outFs = map2_dfr (Fwd.R1, Fwd.R2, filt_function ),
+         outRs = map2_dfr (Rev.R1, Rev.R2, filt_function)) -> files.noprimers
 
 # discard those with fewer than 100 seqs passing either filter
 toc()
