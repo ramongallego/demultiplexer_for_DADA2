@@ -108,9 +108,6 @@ source "${param_file}"
 	# Secondary indices
 	COLNUM_ID2=$( get_colnum "${COLNAME_ID2_SEQ}" "${SEQUENCING_METADATA}")
 
-	# Secondary index sequence positions
-	COLNUM_ID2_START=$( get_colnum "${COLNAME_ID2_START}" "${SEQUENCING_METADATA}")
-
 	# Sample names
 	COLNUM_SAMPLE=$( get_colnum "${COLNAME_SAMPLE_ID}" "${SEQUENCING_METADATA}")
 
@@ -121,7 +118,7 @@ source "${param_file}"
 	# Run away from the script if any of the previous columns was not found
 
 	all_columns=( COLNUM_FILE1 COLNUM_FILE2 COLNUM_ID1 COLNUM_ID2 \
-	COLNUM_ID2_START COLNUM_SAMPLE COLNUM_PRIMER1 COLNUM_PRIMER2 COLNUM_LOCUS)
+	COLNUM_SAMPLE COLNUM_PRIMER1 COLNUM_PRIMER2 COLNUM_LOCUS)
 	#TODO:I am not using colnumID2 START
 	echo "Checking that all columns in metadata are there"
 
@@ -181,9 +178,7 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 		  sort | uniq))
 		N_index_sequences="${#ID2S[@]}"
 		ID2_LENGTH=${#ID2S[0]}
-		ID2_START=($(awk -F',' -v COLNUM=$COLNUM_ID2_START \
-		  'NR>1 {  print $COLNUM }' $SEQUENCING_METADATA |\
-		  sort | uniq))
+		
 
 		# check if number of indexes is greater than one:
 		if [[ "${N_index_sequences}" -gt 1 ]]; then
