@@ -128,10 +128,10 @@ toc()
 tic("dada")
 goodqs |> 
   mutate (
-          dadaF1s = map(derepF1s, ~dada(.x, err = errF1, multithread = TRUE)),
-          dadaF2s = map(derepF2s, ~dada(.x, err = errF2, multithread = TRUE)),
-          dadaR1s = map(derepR1s, ~dada(.x, err = errR1, multithread = TRUE)),
-          dadaR2s = map(derepR2s, ~dada(.x, err = errR2, multithread = TRUE))) -> goodqs
+          dadaF1s = map(derepF1s, ~dada(.x, err = errF1, multithread = TRUE, verbose = F)),
+          dadaF2s = map(derepF2s, ~dada(.x, err = errF2, multithread = TRUE, verbose = F)),
+          dadaR1s = map(derepR1s, ~dada(.x, err = errR1, multithread = TRUE, verbose = F)),
+          dadaR2s = map(derepR2s, ~dada(.x, err = errR2, multithread = TRUE, verbose = F))) -> goodqs
 
 ## TODO: do this only if you have a HOARD=yes From here onwards takes very little time
 saveRDS(goodqs, file = "tosave.rds")
