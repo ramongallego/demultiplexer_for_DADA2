@@ -22,7 +22,6 @@ library (digest)
 library (insect)
 library (tictoc)
 
-n_cores <- availableCores()
 
 sample.map <- read_delim(file.path(params$folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
 print("The sample map looks like this")
