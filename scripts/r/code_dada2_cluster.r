@@ -64,7 +64,7 @@ filt_function <- function(file1, file2){
   filt1s <- file.path(filt_path,basename(file1))
   filt2s <- file.path(filt_path,basename(file2))
         filterAndTrim(file1, filt1s, file2, filt2s, 
-                      truncLen = c(220, 130), 
+                      truncLen = c(240, 140), 
                       maxN=0, maxEE=c(2,2),
                       truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE)  |> 
