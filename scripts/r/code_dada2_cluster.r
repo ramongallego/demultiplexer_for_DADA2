@@ -5,7 +5,9 @@ arguments <- commandArgs(TRUE)
 
 params <- list(folder =arguments[1],
  hash = arguments[3],
- fastqs = arguments[2])
+ fastqs = arguments[2],
+ len1= arguments[4],
+ len2= arguments[5])
 
  
 
@@ -64,7 +66,7 @@ filt_function <- function(file1, file2){
   filt1s <- file.path(filt_path,basename(file1))
   filt2s <- file.path(filt_path,basename(file2))
         filterAndTrim(file1, filt1s, file2, filt2s, 
-                      truncLen = c(240, 140), 
+                      truncLen = c(params$len1,params$len2), 
                       maxN=0, maxEE=c(2,2),
                       truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE)  |> 

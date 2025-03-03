@@ -430,5 +430,5 @@ fi #This finishes the control flow in case you already demultiplexed
 
 if [[ "${SEARCH_ASVs}" = "YES" ]]; then
 	module load R/4.3.1
-	Rscript "${SCRIPT_DIR}"/r/code_dada2_cluster.r "${OUTPUT_DIR}" "${NOPRIMERS_DIR}" "${USE_HASH}" 
+	Rscript "${SCRIPT_DIR}"/r/code_dada2_cluster.r "${OUTPUT_DIR}" "${NOPRIMERS_DIR}" "${USE_HASH}"  "${LENR1}" "{LENR2}"
 fi
