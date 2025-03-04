@@ -6,10 +6,10 @@ arguments <- commandArgs(TRUE)
 params <- list(folder =arguments[1],
  hash = arguments[3],
  fastqs = arguments[2],
- len1= arguments[4],
- len2= arguments[5])
+ len1= as.numeric(arguments[4]),
+ len2= as.numeric(arguments[5]))
 
- 
+params 
 
 ## ----setup, include=FALSE-----------------------------------------------------
 #TODO: make sure the Rscript uses all allocated resources
