@@ -158,7 +158,7 @@ goodqs |>
           joined   = map2(mergersF, mergersR, ~ bind_rows(.x, .y) |> 
                           filter (accept) |> 
                           group_by(sequence, accept) |> 
-                          summarise(across(everything(), sum))),
+                          summarise(across(everything(), sum),  .groups = "drop")),
           
           nochim = map(joined, removeBimeraDenovo)) -> goodqs
 
