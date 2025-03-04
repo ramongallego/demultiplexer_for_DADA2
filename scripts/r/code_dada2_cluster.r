@@ -158,9 +158,12 @@ goodqs |>
           joined   = map2(mergersF, mergersR, ~ bind_rows(.x, .y) |> 
                           filter (accept) |> 
                           group_by(sequence, accept) |> 
-                          summarise(across(everything(), sum),  .groups = "drop")),
-          
-          nochim = map(joined, removeBimeraDenovo)) -> goodqs
+                          summarise(across(everything(), sum),  .groups = "drop"))) -> goodqs
+goodqs |>
+  write_rds(file.path(params$folder, "goodqs.rds"))
+
+goodqs |>
+  mutate(nochim = map(joined, removeBimeraDenovo, multithread= TRUE)) -> goodqs
 
 
 
@@ -169,6 +172,10 @@ goodqs|>
   select(Sample,locus,nochim) |>
   unnest(nochim) |> 
   select(Sample,locus, sequence, nReads = abundance ) -> Abundance_table
+
+ Abundance_table |>
+  write_rds(file.path(params$folder, "Abundance_table.rds"))
+ 
 
 if ( grepl ("yes", params$hash, ignore.case = TRUE)) {
 
