@@ -15,7 +15,7 @@ for file in "${NOPRIMERS_DIR}"/*R1.fastq; do
 
 rev_file=$(echo $file | sed 's/R1.fastq$/R2.fastq/')
 
-echo $file
-echo $rev_file
+head $file
+head $rev_file
 
 done
