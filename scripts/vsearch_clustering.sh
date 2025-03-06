@@ -18,9 +18,7 @@ rev_file=$(echo $fwd_file | sed 's/R1.fastq$/R2.fastq/')
 head "${NOPRIMERS_DIR}"/$fwd_file
 head "${NOPRIMERS_DIR}"/$rev_file
 
-cutadapt -j 0 -u 0 -U 0 -l 240 -L 140 \  # Trim R1 to 240bp, R2 to 140bp
-  -o "${OUTPUT_FOLDER}"/"${fwd_file}" -p "${OUTPUT_FOLDER}"/"${rev_file}" \
-  "${NOPRIMERS_DIR}"/$fwd_file "${NOPRIMERS_DIR}"/$rev_file
+cutadapt -j 0 -u 0 -U 0 -l 240 -L 140 -o "${OUTPUT_FOLDER}"/"${fwd_file}" -p "${OUTPUT_FOLDER}"/"${rev_file}" "${NOPRIMERS_DIR}"/$fwd_file "${NOPRIMERS_DIR}"/$rev_file
 
 
 # vsearch --fastx_filter "${NOPRIMERS_DIR}"/$fwd_file --reverse "${NOPRIMERS_DIR}"/$rev_file --fastq_trunclen "${LENR1}" --fastq_maxns 1  --fastqout_rev "${OUTPUT_FOLDER}"/"${rev_file}" --fastqout "${OUTPUT_FOLDER}"/"${fwd_file}" 
