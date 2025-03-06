@@ -15,16 +15,18 @@ for file in "${NOPRIMERS_DIR}"/*R1.fastq; do
 fwd_file=$(basename $file)
 rev_file=$(echo $fwd_file | sed 's/R1.fastq$/R2.fastq/')
 
-head "${NOPRIMERS_DIR}"/$fwd_file
-head "${NOPRIMERS_DIR}"/$rev_file
+merged_file=$(echo $fwd_file | sed 's/R1.fastq$/merged.fastq/')
+
+## TRIM to length with cutadapt, remove Ns
+
 
 cutadapt -j 0 \
  -u 0 -U 0  \
- -l 240 -L 140 --max-n 0 \
+ -l "${LENR1}" -L "${LENR2}" --max-n 0 \
  -o "${OUTPUT_FOLDER}"/"${fwd_file}" -p "${OUTPUT_FOLDER}"/"${rev_file}" \
  "${NOPRIMERS_DIR}"/$fwd_file "${NOPRIMERS_DIR}"/$rev_file
 
 
-# vsearch --fastx_filter "${NOPRIMERS_DIR}"/$fwd_file --reverse "${NOPRIMERS_DIR}"/$rev_file --fastq_trunclen "${LENR1}" --fastq_maxns 1  --fastqout_rev "${OUTPUT_FOLDER}"/"${rev_file}" --fastqout "${OUTPUT_FOLDER}"/"${fwd_file}" 
+vsearch --fastq_mergepairs "${OUTPUT_FOLDER}"/$fwd_file --reverse "${OUTPUT_FOLDER}"/$rev_file --fastqout "${OUTPUT_FOLDER}"/"${merged_file}" 
 
 done
