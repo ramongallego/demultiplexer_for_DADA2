@@ -113,7 +113,7 @@ toc()
 # Write errors to csv to see if they matter at all
 tosave <- list(errF1, errF2, errR1, errR2)
 
-saveRDS(tosave, file = "all.errors.rds")
+saveRDS(tosave, file = file.path(params$folder,"all.errors.rds"))
 
 ## ----dereplication, echo=F,message=FALSE--------------------------------------
 tic("Dereplicating")
@@ -136,7 +136,7 @@ goodqs |>
           dadaR2s = map(derepR2s, ~dada(.x, err = errR2, multithread = TRUE, verbose = F))) -> goodqs
 
 ## TODO: do this only if you have a HOARD=yes From here onwards takes very little time
-saveRDS(goodqs, file = "tosave.rds")
+saveRDS(goodqs, file = file.path(params$folder,"tosave.rds"))
 toc()
 
 ## ----merging pairs------------------------------------------------------------
