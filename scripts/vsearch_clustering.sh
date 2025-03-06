@@ -16,6 +16,7 @@ fwd_file=$(basename $file)
 rev_file=$(echo $fwd_file | sed 's/R1.fastq$/R2.fastq/')
 
 merged_file=$(echo $fwd_file | sed 's/R1.fastq$/merged.fastq/')
+unmerged_file=$(echo $fwd_file | sed 's/R1.fastq$/un_merged.fastq/')
 
 ## TRIM to length with cutadapt, remove Ns
 
@@ -27,6 +28,6 @@ cutadapt -j 0 \
  "${NOPRIMERS_DIR}"/$fwd_file "${NOPRIMERS_DIR}"/$rev_file
 
 
-vsearch --fastq_mergepairs "${OUTPUT_FOLDER}"/$fwd_file --reverse "${OUTPUT_FOLDER}"/$rev_file --fastqout "${OUTPUT_FOLDER}"/"${merged_file}" 
+vsearch --fastq_mergepairs "${OUTPUT_FOLDER}"/$fwd_file --reverse "${OUTPUT_FOLDER}"/$rev_file --fastqout "${OUTPUT_FOLDER}"/"${merged_file}" --fastaout_notmerged_fwd "${OUTPUT_FOLDER}"/"${unmerged_file}"
 
 done
