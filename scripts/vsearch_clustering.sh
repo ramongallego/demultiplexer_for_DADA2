@@ -18,10 +18,7 @@ rev_file=$(echo $fwd_file | sed 's/R1.fastq$/R2.fastq/')
 head "${NOPRIMERS_DIR}"/$fwd_file
 head "${NOPRIMERS_DIR}"/$rev_file
 
-cutadapt \
-  -j 0 \  # Use 16 threads (adjust as needed)
-  -u 0 -U 0 \  # No trimming from the left
-  -l 240 -L 140 \  # Trim R1 to 240bp, R2 to 140bp
+cutadapt -j 0 -u 0 -U 0 -l 240 -L 140 \  # Trim R1 to 240bp, R2 to 140bp
   -o "${OUTPUT_FOLDER}"/"${fwd_file}" -p "${OUTPUT_FOLDER}"/"${rev_file}" \
   "${NOPRIMERS_DIR}"/$fwd_file "${NOPRIMERS_DIR}"/$rev_file
 
