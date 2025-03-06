@@ -28,6 +28,6 @@ cutadapt -j 0 \
  "${NOPRIMERS_DIR}"/$fwd_file "${NOPRIMERS_DIR}"/$rev_file
 
 
-vsearch --fastq_mergepairs "${OUTPUT_FOLDER}"/$fwd_file --reverse "${OUTPUT_FOLDER}"/$rev_file --fastqout "${OUTPUT_FOLDER}"/"${merged_file}" --fastq_maxee 0.01 --fastaout_notmerged_fwd "${OUTPUT_FOLDER}"/"${unmerged_file}"
+vsearch --fastq_mergepairs "${OUTPUT_FOLDER}"/$fwd_file --reverse "${OUTPUT_FOLDER}"/$rev_file --fastqout "${OUTPUT_FOLDER}"/"${merged_file}" --fastq_maxee_rate 0.01 --fastaout_notmerged_fwd "${OUTPUT_FOLDER}"/"${unmerged_file}"
 
 done
