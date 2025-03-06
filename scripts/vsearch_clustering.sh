@@ -12,10 +12,12 @@ LENR1=$4
 LENR2=$5
 
 for file in "${NOPRIMERS_DIR}"/*R1.fastq; do
+fwd_file=$(basename $file)
+rev_file=$(echo $fwd_file | sed 's/R1.fastq$/R2.fastq/')
 
-rev_file=$(echo $file | sed 's/R1.fastq$/R2.fastq/')
+head "${NOPRIMERS_DIR}"/$fwd_file
+head "${NOPRIMERS_DIR}"/$rev_file
 
-head $file
-head $rev_file
+vsearch --fastx_filter --fastq_trunclen "${LENR1}" --fastq_maxns 1 --reverse "${NOPRIMERS_DIR}"/$rev_file --fastqout_rev "${OUTPUT_FOLDER}"/"${rev_file}" --fastqout "${OUTPUT_FOLDER}"/"${fwd_file}"
 
 done
