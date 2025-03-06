@@ -18,6 +18,6 @@ rev_file=$(echo $fwd_file | sed 's/R1.fastq$/R2.fastq/')
 head "${NOPRIMERS_DIR}"/$fwd_file
 head "${NOPRIMERS_DIR}"/$rev_file
 
-vsearch --fastx_filter --fastq_trunclen "${LENR1}" --fastq_maxns 1 --reverse "${NOPRIMERS_DIR}"/$rev_file --fastqout_rev "${OUTPUT_FOLDER}"/"${rev_file}" --fastqout "${OUTPUT_FOLDER}"/"${fwd_file}"
+vsearch --fastx_filter --fastq_trunclen "${LENR1}" --fastq_maxns 1 --reverse "${NOPRIMERS_DIR}"/$rev_file --fastqout_rev "${OUTPUT_FOLDER}"/"${rev_file}" --fastqout "${OUTPUT_FOLDER}"/"${fwd_file}" "${NOPRIMERS_DIR}"/$fwd_file
 
 done
