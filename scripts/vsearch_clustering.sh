@@ -12,7 +12,7 @@ LENR1=$4
 LENR2=$5
 
 # We should reverse the _Rev files and concatenate them after the Fwd ones
-for file in "${NOPRIMERS_DIR}"/*_Fwd_R*.fastq; do
+for file in "${NOPRIMERS_DIR}"/*_Fwd.R*.fastq; do
 
 fwd_file=$(basename $file)
 rev_file=$(echo $fwd_file | sed sed -E 's/(Fwd)_(R[12])/Rev_\2/')
