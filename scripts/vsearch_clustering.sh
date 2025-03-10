@@ -55,7 +55,7 @@ for file in "${OUTPUT_FOLDER}"/*_Fwd.merged.fasta; do
 
     vsearch --fastx_uniques "${OUTPUT_FOLDER}"/"${merged_file}" --sizeout --fastaout "${OUTPUT_FOLDER}"/"${derep_file}"
 
-    vsearch --cluster_unoise "${OUTPUT_FOLDER}"/"${derep_file}" --centroids "${OUTPUT_FOLDER}"/"${centroids_file}" --sizein --sizeout --minsize 1
+    vsearch --cluster_unoise "${OUTPUT_FOLDER}"/"${derep_file}"  --sizein --sizeout --minsize 1 --centroids - | seqkit seq -w 0 > "${OUTPUT_FOLDER}"/"${centroids_file}"
 
 
 
