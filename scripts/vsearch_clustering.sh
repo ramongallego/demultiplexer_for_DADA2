@@ -40,7 +40,7 @@ for file in "${NOPRIMERS_DIR}"/*R1.fastq; do
 
 done
 
-for file in "${OUTPUT_FOLDER}"/*_Fwd.merged.fasta$; do
+for file in "${OUTPUT_FOLDER}"/*_Fwd.merged.fasta; do
 
     # We should reverse the _Rev files and concatenate them after the Fwd ones, but do that after merging R1 and R2
 
