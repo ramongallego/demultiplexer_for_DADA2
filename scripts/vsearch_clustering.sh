@@ -51,12 +51,15 @@ for file in "${OUTPUT_FOLDER}"/*_Fwd.merged.fasta; do
 
     centroids_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_centroids.fasta/')
 
+    non_chimeras_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_non_chimeras.fasta/')
+
+
     revcom "${OUTPUT_FOLDER}"/$rev_file >> "${OUTPUT_FOLDER}"/$fwd_file
 
     vsearch --fastx_uniques "${OUTPUT_FOLDER}"/"${merged_file}" --sizeout --fastaout "${OUTPUT_FOLDER}"/"${derep_file}"
 
-    vsearch --cluster_unoise "${OUTPUT_FOLDER}"/"${derep_file}"  --sizein --sizeout --minsize 1 --centroids - | seqkit seq -w 0 > "${OUTPUT_FOLDER}"/"${centroids_file}"
+    vsearch --cluster_unoise "${OUTPUT_FOLDER}"/"${derep_file}"  --sizein --sizeout --minsize 1 --centroids "${OUTPUT_FOLDER}"/"${centroids_file}"
 
-
+    vsearch --uchime3_denovo "${OUTPUT_FOLDER}"/"${centroids_file}"  --sizein --sizeout --nonchimeras - | seqkit seq -w 0 > "${OUTPUT_FOLDER}"/"${non_chimeras_file}"
 
 done

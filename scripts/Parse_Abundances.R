@@ -9,14 +9,14 @@ library (eDNAfuns)
 library (tidyverse)
 library (digest)
 
-samples <- tibble (files = list.files(params$folder, pattern = "*centroids.fasta"))
+samples <- tibble (files = list.files(params$folder, pattern = "*_non_chimeras.fasta"))
 sample_trans <- read_table(file.path(params$folder, "sample_trans.tmp"),
                            col_names = c("IDS", "Key", "Sample")) |> 
                            select(-IDS)
 
 samples |> 
   separate(files, into = c("Key", "locus"), sep = "_Locus_", remove = F) |> 
-  mutate(locus = str_remove(locus, "_centroids.fasta")) |> 
+  mutate(locus = str_remove(locus, "_non_chimeras.fasta")) |> 
   mutate(seqs = map(files, ~fasta_reader(file.path(params$folder, .x))))-> samples
 
 samples |> 
