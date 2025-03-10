@@ -17,9 +17,9 @@ for file in "${NOPRIMERS_DIR}"/*_Fwd_R*.fastq; do
 fwd_file=$(basename $file)
 rev_file=$(echo $fwd_file | sed sed -E 's/(Fwd)_(R[12])/Rev_\2/')
 
-echo $fwd_file
+head $fwd_file
 echo $rev_file
-
+head $rev_file
 done
 
 for file in "${NOPRIMERS_DIR}"/*R1.fastq; do
