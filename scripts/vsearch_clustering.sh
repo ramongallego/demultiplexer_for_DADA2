@@ -2,6 +2,11 @@
 
 ## usage bash vsearch_clustering.sh <path_to_output_folder> <path_to_no_primers_folder> <USE_HASH> <LENR1> <LENR2>
 
+MAIN_DIR="$(dirname "$0")"
+SCRIPT_DIR="${MAIN_DIR}"/scripts
+for file in "${SCRIPT_DIR}"/* ; do
+	source "${file}"
+done
 
 # trim reads to desired length & and qc
 
