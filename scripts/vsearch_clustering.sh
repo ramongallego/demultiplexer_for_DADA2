@@ -15,7 +15,7 @@ LENR2=$5
 for file in "${NOPRIMERS_DIR}"/*_Fwd.R*.fastq; do
 
 fwd_file=$(basename $file)
-rev_file=$(echo $fwd_file | sed -E 's/(Fwd).(R[12])/Rev.\2/')
+rev_file=$(echo $fwd_file | sed -E 's/_Fwd\.R([12]\.fastq)$/_Rev.R\1/')
 
 echo "${NOPRIMERS_DIR}"/$fwd_file
 echo "${NOPRIMERS_DIR}"/$rev_file
