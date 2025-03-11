@@ -4,7 +4,7 @@
 
 MAIN_DIR="$(dirname "$0")"
 
-for file in "${MAIN_DIR}"/* ; do
+for file in "${MAIN_DIR}"/*.sh ; do
 	source "${file}"
 done
 
