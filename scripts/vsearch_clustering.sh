@@ -43,34 +43,35 @@ for file in "${NOPRIMERS_DIR}"/*R1.fastq; do
 
 
     num=$(vsearch --fastq_mergepairs "${OUTPUT_FOLDER}"/$R1_file --reverse "${OUTPUT_FOLDER}"/$R2_file --fastaout "${OUTPUT_FOLDER}"/"${merged_file}" \
-        --fastaout_notmerged_fwd "${OUTPUT_FOLDER}"/"${unmerged_file}" | grep "Merged (" | awk '{print $1}')
+        --fastaout_notmerged_fwd "${OUTPUT_FOLDER}"/"${unmerged_file}")
+        #  | grep "Merged (" | awk '{print $1}')
 
      echo "${sample}, merging, ${num}" >> "${OUTPUT_SUMMARY}"   
 
 done
 
-for file in "${OUTPUT_FOLDER}"/*_Fwd.merged.fasta; do
+# for file in "${OUTPUT_FOLDER}"/*_Fwd.merged.fasta; do
 
-    # We should reverse the _Rev files and concatenate them after the Fwd ones, but do that after merging R1 and R2
+#     # We should reverse the _Rev files and concatenate them after the Fwd ones, but do that after merging R1 and R2
 
-    fwd_file=$(basename $file)
-    rev_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_Rev.merged.fasta/')
+#     fwd_file=$(basename $file)
+#     rev_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_Rev.merged.fasta/')
 
-    derep_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_derep.fasta/')
+#     derep_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_derep.fasta/')
 
-    centroids_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_centroids.fasta/')
+#     centroids_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_centroids.fasta/')
 
-    non_chimeras_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_non_chimeras.fasta/')
+#     non_chimeras_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_non_chimeras.fasta/')
 
-    sample=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$//')
+#     sample=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$//')
 
 
-    revcom "${OUTPUT_FOLDER}"/$rev_file >> "${OUTPUT_FOLDER}"/$fwd_file
+#     revcom "${OUTPUT_FOLDER}"/$rev_file >> "${OUTPUT_FOLDER}"/$fwd_file
 
-    vsearch --fastx_uniques "${OUTPUT_FOLDER}"/"${merged_file}" --sizeout --fastaout "${OUTPUT_FOLDER}"/"${derep_file}"
+#     vsearch --fastx_uniques "${OUTPUT_FOLDER}"/"${merged_file}" --sizeout --fastaout "${OUTPUT_FOLDER}"/"${derep_file}"
 
-    vsearch --cluster_unoise "${OUTPUT_FOLDER}"/"${derep_file}"  --sizein --sizeout --minsize 1 --centroids "${OUTPUT_FOLDER}"/"${centroids_file}"
+#     vsearch --cluster_unoise "${OUTPUT_FOLDER}"/"${derep_file}"  --sizein --sizeout --minsize 1 --centroids "${OUTPUT_FOLDER}"/"${centroids_file}"
 
-    vsearch --uchime3_denovo "${OUTPUT_FOLDER}"/"${centroids_file}"  --sizein --sizeout --nonchimeras - | seqkit seq -w 0 > "${OUTPUT_FOLDER}"/"${non_chimeras_file}"
+#     vsearch --uchime3_denovo "${OUTPUT_FOLDER}"/"${centroids_file}"  --sizein --sizeout --nonchimeras - | seqkit seq -w 0 > "${OUTPUT_FOLDER}"/"${non_chimeras_file}"
 
 done
