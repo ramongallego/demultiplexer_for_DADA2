@@ -43,11 +43,11 @@ for file in "${NOPRIMERS_DIR}"/*R1.fastq; do
 
 
     num=$(vsearch --fastq_mergepairs "${OUTPUT_FOLDER}"/$R1_file --reverse "${OUTPUT_FOLDER}"/$R2_file --fastaout "${OUTPUT_FOLDER}"/"${merged_file}" \
-        --fastaout_notmerged_fwd "${OUTPUT_FOLDER}"/"${unmerged_file}")
-        #  | grep "Merged (" | awk '{print $1}')
+        --fastaout_notmerged_fwd "${OUTPUT_FOLDER}"/"${unmerged_file}" | grep "Merged (" )
+        #  | awk '{print $1}')
 
-     echo "${sample}, merging, ${num}" >> "${OUTPUT_SUMMARY}"   
-
+    #  echo "${sample}, merging, ${num}" >> "${OUTPUT_SUMMARY}"   
+    echo "${num}"
 done
 
 # for file in "${OUTPUT_FOLDER}"/*_Fwd.merged.fasta; do
@@ -74,4 +74,4 @@ done
 
 #     vsearch --uchime3_denovo "${OUTPUT_FOLDER}"/"${centroids_file}"  --sizein --sizeout --nonchimeras - | seqkit seq -w 0 > "${OUTPUT_FOLDER}"/"${non_chimeras_file}"
 
-done
+# done
