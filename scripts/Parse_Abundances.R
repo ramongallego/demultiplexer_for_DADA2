@@ -17,7 +17,7 @@ sample_trans <- read_table(file.path(params$folder, "sample_trans.tmp"),
 samples |> 
   separate(files, into = c("Key", "locus"), sep = "_Locus_", remove = F) |> 
   mutate(locus = str_remove(locus, "_non_chimeras.fasta")) |> 
-  mutate(seqs = map(files, ~fasta_reader(file.path(params$folder, .x))))-> samples
+  mutate(seqs = map(files, ~fasta_reader(file.path(fastas.path, .x))))-> samples
 
 samples |> 
   inner_join(sample_trans) |> 
