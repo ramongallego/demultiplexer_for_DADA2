@@ -43,7 +43,7 @@ for file in "${NOPRIMERS_DIR}"/*R1.fastq; do
 
 
     num=$(vsearch --fastq_mergepairs "${OUTPUT_FOLDER}"/$R1_file --reverse "${OUTPUT_FOLDER}"/$R2_file --fastaout "${OUTPUT_FOLDER}"/"${merged_file}" \
-        --fastaout_notmerged_fwd "${OUTPUT_FOLDER}"/"${unmerged_file}" | grep -m1 " Merged (" | awk '{print $1}')
+        --fastaout_notmerged_fwd "${OUTPUT_FOLDER}"/"${unmerged_file}" | grep " Merged (" | awk '{print $1}')
 
      echo "${sample}, merging, ${num}" >> "${OUTPUT_SUMMARY}"   
 
