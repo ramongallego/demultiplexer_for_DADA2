@@ -3,13 +3,13 @@ arguments <- commandArgs(TRUE)
 params <- list(folder = arguments[1],
                  hash = arguments[2])
 
-params 
+fastas.path <- file.path(params$folder, "midfiles") 
 
 library (eDNAfuns)
 library (tidyverse)
 library (digest)
 
-samples <- tibble (files = list.files(params$folder, pattern = "*_non_chimeras.fasta"))
+samples <- tibble (files = list.files(fastas.path, pattern = "*_non_chimeras.fasta"))
 sample_trans <- read_table(file.path(params$folder, "sample_trans.tmp"),
                            col_names = c("IDS", "Key", "Sample")) |> 
                            select(-IDS)
