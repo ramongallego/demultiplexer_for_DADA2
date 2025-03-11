@@ -4,9 +4,8 @@
 
 MAIN_DIR="$(dirname "$0")"
 
-for file in "${MAIN_DIR}"/*.sh ; do
-	source "${file}"
-done
+source "${MAIN_DIR}"/revcom.sh
+
 
 # trim reads to desired length & and qc
 
