@@ -39,7 +39,7 @@ for file in "${NOPRIMERS_DIR}"/*R1.fastq; do
 
     num=$(grep "Pairs written (passing filters)" "${OUTPUT_FOLDER}"/cutadapt_logqcontrol.txt | awk '{print $5}' | tr -d ',')
     
-    echo "${sample}", filtering, ${num}" >> "${OUTPUT_SUMMARY}"
+    echo "${sample}, filtering, ${num}" >> "${OUTPUT_SUMMARY}"
 
 
     num=$(vsearch --fastq_mergepairs "${OUTPUT_FOLDER}"/$R1_file --reverse "${OUTPUT_FOLDER}"/$R2_file --fastaout "${OUTPUT_FOLDER}"/"${merged_file}" \
