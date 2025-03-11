@@ -41,7 +41,7 @@ if ( grepl ("yes", params$hash, ignore.case = TRUE)) {
   write_csv(Hash_key, file = file.path(params$folder,"Hash_key.csv"))
   
   eDNAfuns::fasta_writer(df = Hash_key,
-                         sequence = sequence, 
+                         sequence = seq, 
                          header = Hash,
                          file.out = file.path(params$folder, "Hash_key.fasta"))
   
