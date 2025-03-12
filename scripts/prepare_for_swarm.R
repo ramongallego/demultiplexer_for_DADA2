@@ -18,7 +18,7 @@ ASV_table |>
     mutate (write = walk2(Sample, data, function (.x, .y){
     
             .y |> 
-                eDNAfuns::fasta.writer(sequence = seq,
+                eDNAfuns::fasta_writer(sequence = seq,
                    header = header, 
                    file.out =file.path(params$folder,"swarm_input" ,paste0(.x, ".fasta")))
   }))
