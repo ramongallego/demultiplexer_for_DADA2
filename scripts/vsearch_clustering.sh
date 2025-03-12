@@ -4,9 +4,6 @@
 
 MAIN_DIR="$(dirname "$0")"
 
-source "${MAIN_DIR}"/revcom.sh
-
-
 # trim reads to desired length & and qc
 
 OUTPUT_FOLDER=$1
@@ -68,9 +65,9 @@ for file in "${MIDFILES}"/*_Fwd.merged.fasta; do
     sample=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$//')
 
     # reversing Rev reads and adding them at the end of Fwd file  
-    revcom "${MIDFILES}"/$rev_file >> "${MIDFILES}"/$fwd_file
+    seqkit seq -r -p -w 0 "${MIDFILES}"/"${rev_file}" >> "${MIDFILES}"/"${fwd_file}"
     # dereplicate
-    vsearch --fastx_uniques "${MIDFILES}"/"${merged_file}" --sizeout --fastaout "${MIDFILES}"/"${derep_file}"
+    vsearch --fastx_uniques "${MIDFILES}"/"${fwd_file}" --sizeout --fastaout "${MIDFILES}"/"${derep_file}"
     # denoise 
     vsearch --cluster_unoise "${MIDFILES}"/"${derep_file}"  --sizein --sizeout --minsize 1 --centroids "${MIDFILES}"/"${centroids_file}"
 
