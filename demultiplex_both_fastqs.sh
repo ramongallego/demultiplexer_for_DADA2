@@ -434,14 +434,33 @@ if [[ "${SEARCH_Unoise}" = "YES" ]]; then
 fi
 if [[ "${SECONDARY_SWARM}" = "YES" ]]; then
     echo "Preparing data for swarm..."
-    Rscript "${SCRIPT_DIR}"/ready_for_swarm.R "${OUTPUT_DIR}" 
+    Rscript "${SCRIPT_DIR}"/prepare_for_swarm.R "${OUTPUT_DIR}" 
    
     # Check if Rscript was successful
     if [[ $? -eq 0 ]]; then
         echo "Launching swarm..."
-        bash "${SCRIPT_DIR}"/swarm.sh "${OUTPUT_DIR}" 
+        bash "${SCRIPT_DIR}"/swarm.sh "${OUTPUT_DIR}"/swarm_input 
     else
         echo "Error: R script failed. Swarm will not be launched." >&2
         exit 1  # Exit with error status
     fi
+	# Check if swarm was successful
+    if [[ $? -eq 0 ]]; then
+        echo "Parsing swarm..."
+        bash "${SCRIPT_DIR}"/parsing_swarm.R "${OUTPUT_DIR}"
+    else
+        echo "Error: swarm script failed. " >&2
+        exit 1  # Exit with error status
+    fi
+
+fi
+
+if [[ "${HOARD}" = "NO" ]]; then
+
+	rm -r "${OUTPUT_DIR}"/demultiplexed
+	rm -r "${OUTPUT_DIR}"/noprimers
+	rm -r "${OUTPUT_DIR}"/midfiles
+	if [[  -d "${OUTPUT_DIR}"/swarm_input ]]; then
+	rm -r "${OUTPUT_DIR}"/swarm_input
+	fi
 fi
