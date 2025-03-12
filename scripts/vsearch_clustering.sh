@@ -14,17 +14,24 @@ LENR2=$5
 
 OUTPUT_SUMMARY="${OUTPUT_FOLDER}"/vsearch_summary.csv
 echo "Sample, step, nreads" > "${OUTPUT_SUMMARY}"
+MERGING_SUMMARY="${OUTPUT_FOLDER}"/merge_summary.csv
+echo "Sample,Pairs,Merged,Unmerged,kmers,multiple,lowscore,tooshort,staggered"  > "${MERGING_SUMMARY}"
+
 MIDFILES="${OUTPUT_FOLDER}"/midfiles
 mkdir "${MIDFILES}"
 
 for file in "${NOPRIMERS_DIR}"/*R1.fastq; do
 
-    R1_file=$(basename $file)
-    R2_file=$(echo $R1_file | sed 's/R1.fastq$/R2.fastq/')
+    R1_file=$(basename "$file")
+    R2_file="${R1_file/R1.fastq/R2.fastq}"
+    sample="${R1_file/.R1.fastq/}"
 
-    merged_file=$(echo $R1_file | sed 's/R1.fastq$/merged.fasta/')
-    unmerged_file=$(echo $R1_file | sed 's/R1.fastq$/un_merged.fasta/')
-    sample=$(echo $R1_file | sed 's/.R1.fastq$//')
+    merged_file="${sample}.merged.fasta"
+    unmerged_file="${sample}.un_merged.fasta"
+    cutadapt_log="${MIDFILES}/${sample}_cutadapt_log.txt"
+    merge_log="${MIDFILES}/${sample}_merge.log" 
+
+    echo "Processing sample: ${sample}"
     
 
     ## TRIM to length with cutadapt, remove Ns
@@ -39,13 +46,31 @@ for file in "${NOPRIMERS_DIR}"/*R1.fastq; do
     num=$(grep "Pairs written (passing filters)" "${MIDFILES}"/cutadapt_logqcontrol.txt | awk '{print $5}' | tr -d ',')
     
     echo "${sample}, filtering, ${num}" >> "${OUTPUT_SUMMARY}"
+    
+    ## merge pairs and stats
 
+    
 
-    num=$(vsearch --fastq_mergepairs "${MIDFILES}"/$R1_file --reverse "${MIDFILES}"/$R2_file --fastaout "${MIDFILES}"/"${merged_file}" \
-        --fastaout_notmerged_fwd "${MIDFILES}"/"${unmerged_file}" 2>&1 | grep "Merged ("  | awk '{print $1}')
-        # )
+   vsearch --fastq_mergepairs "${MIDFILES}"/$R1_file --reverse "${MIDFILES}"/$R2_file --fastaout "${MIDFILES}"/"${merged_file}" \
+    --fastq_allowmergestagger \
+    --fastaout_notmerged_fwd "${MIDFILES}"/"${unmerged_file}" 2> "${merge_log}"
+    
+    #Extract key stats
+        pairs=$(grep -oP '^\d+(?=\s+Pairs)' "$merge_log" || echo 0)
+        merged=$(grep -oP '^\d+(?=\s+Merged)' "$merge_log" || echo 0)
+        unmerged=$(grep -oP '^\d+(?=\s+Not merged)' "$merge_log" || echo 0)
 
-     echo "${sample}, merging, ${num}" >> "${OUTPUT_SUMMARY}"   
+    # Extract failure reasons, setting defaults if missing
+        kmers=$(grep -oP '^\d+(?=\s+too few kmers)' "$merge_log" || echo 0)
+        multiple=$(grep -oP '^\d+(?=\s+multiple potential alignments)' "$merge_log" || echo 0)
+        lowscore=$(grep -oP '^\d+(?=\s+alignment score too low)' "$merge_log" || echo 0)
+        tooshort=$(grep -oP '^\d+(?=\s+overlap too short)' "$merge_log" || echo 0)
+        staggered=$(grep -oP '^\d+(?=\s+staggered read pairs)' "$merge_log" || echo 0)
+
+    echo "${sample}, merging, ${merged}" >> "${OUTPUT_SUMMARY}"  
+
+    # Append to merge summary file
+    echo "${sample},${pairs},${merged},${unmerged},${kmers},${multiple},${lowscore},${tooshort},${staggered}" >> "${MERGING_SUMMARY}"
     
 done
 
@@ -53,19 +78,18 @@ for file in "${MIDFILES}"/*_Fwd.merged.fasta; do
 
     # We should reverse the _Rev files and concatenate them after the Fwd ones, but do that after merging R1 and R2
 
-    fwd_file=$(basename $file)
-    rev_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_Rev.merged.fasta/')
+    fwd_file=$(basename "$file")
+    sample="${fwd_file/_Fwd.merged.fasta/}"
 
-    derep_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_derep.fasta/')
+    rev_file="${sample}_Rev.merged.fasta"
+    derep_file="${sample}_derep.fasta"
+    centroids_file="${sample}_centroids.fasta"
+    non_chimeras_file="${sample}_non_chimeras.fasta"
 
-    centroids_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_centroids.fasta/')
-
-    non_chimeras_file=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$/_non_chimeras.fasta/')
-
-    sample=$(echo $fwd_file | sed 's/_Fwd.merged.fasta$//')
+    echo "Processing sample: ${sample} (Dereplication, Denoising, Chimera checking)"
 
     # reversing Rev reads and adding them at the end of Fwd file  
-    seqkit seq -r -p -w 0 "${MIDFILES}"/"${rev_file}" >> "${MIDFILES}"/"${fwd_file}"
+    seqkit seq -t dna -r -p -w 0 "${MIDFILES}"/"${rev_file}" >> "${MIDFILES}"/"${fwd_file}"
     # dereplicate
     vsearch --fastx_uniques "${MIDFILES}"/"${fwd_file}" --sizeout --fastaout "${MIDFILES}"/"${derep_file}"
     # denoise 
