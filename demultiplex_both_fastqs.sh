@@ -432,3 +432,16 @@ fi
 if [[ "${SEARCH_Unoise}" = "YES" ]]; then
 	bash "${SCRIPT_DIR}"/vsearch_clustering.sh "${OUTPUT_DIR}" "${NOPRIMERS_DIR}" "${USE_HASH}"  "${LENR1}" "${LENR2}"
 fi
+if [[ "${SECONDARY_SWARM}" = "YES" ]]; then
+    echo "Preparing data for swarm..."
+    Rscript "${SCRIPT_DIR}"/ready_for_swarm.R "${OUTPUT_DIR}" 
+   
+    # Check if Rscript was successful
+    if [[ $? -eq 0 ]]; then
+        echo "Launching swarm..."
+        bash "${SCRIPT_DIR}"/swarm.sh "${OUTPUT_DIR}" 
+    else
+        echo "Error: R script failed. Swarm will not be launched." >&2
+        exit 1  # Exit with error status
+    fi
+fi
