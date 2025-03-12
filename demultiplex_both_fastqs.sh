@@ -424,11 +424,11 @@ else #In case you already demultiplexed your samples, then cp the files you need
 	NOPRIMERS_DIR="${DEMULT_OUTPUT}"/noprimers
 
 fi #This finishes the control flow in case you already demultiplexed
-# We are selecting a pair of fastq files so we can check the direction of the
-# ASVs
-
 
 if [[ "${SEARCH_ASVs}" = "YES" ]]; then
 	module load R/4.3.1
 	Rscript "${SCRIPT_DIR}"/r/code_dada2_cluster.r "${OUTPUT_DIR}" "${NOPRIMERS_DIR}" "${USE_HASH}"  "${LENR1}" "${LENR2}"
+fi
+if [[ "${SEARCH_Unoise}" = "YES" ]]; then
+	bash "${SCRIPT_DIR}"/vsearch_clustering.sh "${OUTPUT_DIR}" "${NOPRIMERS_DIR}" "${USE_HASH}"  "${LENR1}" "${LENR2}"
 fi
