@@ -38,10 +38,11 @@ if ( grepl ("yes", params$hash, ignore.case = TRUE)) {
     rowwise() |>
     mutate (Hash = sha1(seq)) -> Hash_key
   
-  write_csv(Hash_key, file = file.path(params$folder,"Hash_key.csv"))
+  write_csv(Hash_key |>
+              rename(sequence=seq), file = file.path(params$folder,"Hash_key.csv"))
   
   eDNAfuns::fasta_writer(df = Hash_key,
-                         sequence = seq, 
+                         sequence = sequence, 
                          header = Hash,
                          file.out = file.path(params$folder, "Hash_key.fasta"))
   
