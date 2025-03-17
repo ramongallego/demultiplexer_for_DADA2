@@ -447,7 +447,7 @@ if [[ "${SECONDARY_SWARM}" = "YES" ]]; then
 	# Check if swarm was successful
     if [[ $? -eq 0 ]]; then
         echo "Parsing swarm..."
-        bash "${SCRIPT_DIR}"/parsing_swarm.R "${OUTPUT_DIR}"
+        Rscript "${SCRIPT_DIR}"/parsing_swarm.R "${OUTPUT_DIR}"
     else
         echo "Error: swarm script failed. " >&2
         exit 1  # Exit with error status
