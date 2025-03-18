@@ -52,7 +52,7 @@ for file in "${NOPRIMERS_DIR}"/*R1.fastq; do
     
 
    vsearch --fastq_mergepairs "${MIDFILES}"/$R1_file --reverse "${MIDFILES}"/$R2_file --fastaout "${MIDFILES}"/"${merged_file}" \
-    --fastq_allowmergestagger \
+    --fastq_maxdiffs 2 \
     --fastaout_notmerged_fwd "${MIDFILES}"/"${unmerged_file}" 2> "${merge_log}"
     
     #Extract key stats
