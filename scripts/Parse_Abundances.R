@@ -47,7 +47,8 @@ if ( grepl ("yes", params$hash, ignore.case = TRUE)) {
                          file.out = file.path(params$folder, "Hash_key.fasta"))
   
   samples |> 
-    semi_join(Hash_key) |> 
+    rename(sequence=seq) |>
+    inner_join(Hash_key) |> 
     select (Sample, locus, Hash, nReads) -> Abundance
   
   write_csv(Abundance, file = file.path(params$folder,"ASV_table.csv"))
