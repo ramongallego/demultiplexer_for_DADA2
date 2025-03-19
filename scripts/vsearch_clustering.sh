@@ -103,7 +103,7 @@ for file in "${MIDFILES}"/*_Fwd.merged.fastq; do
     # dereplicate
     vsearch --fastx_uniques "${MIDFILES}"/"${fwd_file}" --sizeout --fastaout "${MIDFILES}"/"${derep_file}"
     # denoise 
-    vsearch --cluster_unoise "${MIDFILES}"/"${derep_file}"  --sizein --sizeout --minsize 1 --centroids "${MIDFILES}"/"${centroids_file}"
+    vsearch --cluster_unoise "${MIDFILES}"/"${derep_file}"  --sizein --sizeout --minsize 2 --centroids "${MIDFILES}"/"${centroids_file}"
 
         # calculate number of reads after denoising 
 
