@@ -91,7 +91,7 @@ for file in "${MIDFILES}"/*_Fwd.merged.fastq; do
         sample="${fwd_file/_Fwd.merged.fastq/}"
 
 
-    rev_file="${sample}_Rev.merged.fasta"
+    rev_file="${sample}_Rev.merged.fastq"
     derep_file="${sample}_derep.fasta"
     centroids_file="${sample}_centroids.fasta"
     non_chimeras_file="${sample}_non_chimeras.fasta"
