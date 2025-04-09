@@ -58,7 +58,7 @@ files.noprimers |>
 
 print("We should have reduced the dataset to those matching the sample map and added the real sample names")
 names(files.noprimers$Fwd.R1) <- names(files.noprimers$Fwd.R2) <- names(files.noprimers$Rev.R1) <- names(files.noprimers$Rev.R2) <- files.noprimers$Sample
-
+files.noprimers
 ## ----filter and trim----------------------------------------------------------
 filt_path <- file.path(params$folder, "/filtered") # Place filtered files in filtered/ subdirectory
 
@@ -104,7 +104,7 @@ files.noprimers |>
 #### We need to point towards the filtered files
 
 ## ----learning errors, echo=T- this is so intensive I would rather use all cores on each error calculation-------------------------------------------------
-
+echo ("Learning errors")
 tic("Learning errors")
 
 errF1 <- learnErrors(goodqs$filtF1s, multithread=TRUE,verbose = 0, nbases = 100e6)
