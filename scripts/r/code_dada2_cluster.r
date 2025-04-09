@@ -104,7 +104,7 @@ files.noprimers |>
 #### We need to point towards the filtered files
 
 ## ----learning errors, echo=T- this is so intensive I would rather use all cores on each error calculation-------------------------------------------------
-echo ("Learning errors")
+print ("Learning errors")
 tic("Learning errors")
 
 errF1 <- learnErrors(goodqs$filtF1s, multithread=TRUE,verbose = 0, nbases = 100e6)
