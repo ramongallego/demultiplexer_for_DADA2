@@ -70,7 +70,7 @@ filt_function <- function(file1, file2){
                       maxN=0, maxEE=c(2,2),
                       truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE)  |> 
-        as_tibble(rownames = "Sample")
+        as_tibble()
     }
 
 ## TODO implement futuremap for multicore usage - testing now
@@ -83,10 +83,12 @@ files.noprimers |>
          filtR1s = file.path(filt_path,basename(Rev.R1)),
          filtR2s = file.path(filt_path,basename(Rev.R2))) -> files.noprimers
 outFs <- filt_function(files.noprimers$Fwd.R1,
-                       files.noprimers$Fwd.R2 )
+                       files.noprimers$Fwd.R2 ) |>
+                        mutate(Sample = files.noprimers$Sample)
 outFs
 outRs <- filt_function(files.noprimers$Rev.R1,
-                        files.noprimers$Rev.R2)
+                        files.noprimers$Rev.R2) |>
+                        mutate(Sample = files.noprimers$Sample)
 outRs
 
 toc()
