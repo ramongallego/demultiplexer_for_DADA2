@@ -99,6 +99,9 @@ files.noprimers |>
              select(Sample, reads.outR = reads.out), by = "Sample") |>
   filter (reads.outF >100 & reads.outR > 100) -> goodqs
 
+
+goodqs
+
 #### Learn 4 errors objects: these are a function of the NEXTSEQ run and not of 
 #### the sample, so it does not make sense to calculate them once per row.
 #### We need to point towards the filtered files
