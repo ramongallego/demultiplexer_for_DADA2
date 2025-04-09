@@ -7,7 +7,7 @@ module load cutadapt/4.1
 #We need to gather: Location of functions  and fastqs:
 MAIN_DIR="$(dirname "$0")"
 SCRIPT_DIR="${MAIN_DIR}"/scripts
-for file in "${SCRIPT_DIR}"/* ; do
+for file in "${SCRIPT_DIR}"/*.sh ; do
 	source "${file}"
 done
 
@@ -430,16 +430,19 @@ if [[ "${SEARCH_ASVs}" = "YES" ]]; then
 	Rscript "${SCRIPT_DIR}"/r/code_dada2_cluster.r "${OUTPUT_DIR}" "${NOPRIMERS_DIR}" "${USE_HASH}"  "${LENR1}" "${LENR2}"
 fi
 if [[ "${SEARCH_Unoise}" = "YES" ]]; then
-	bash "${SCRIPT_DIR}"/vsearch_clustering.sh "${OUTPUT_DIR}" "${NOPRIMERS_DIR}" "${USE_HASH}"  "${LENR1}" "${LENR2}"
-fi
+	echo "Entering SEARCH_Uniose block"
+	bash "${SCRIPT_DIR}"/clustering/vsearch_clustering.sh "${OUTPUT_DIR}" "${NOPRIMERS_DIR}" "${USE_HASH}"  "${LENR1}" "${LENR2}"
+	fi
+	echo "Exiting SEARCH_Uniose block"
+
 if [[ "${SECONDARY_SWARM}" = "YES" ]]; then
     echo "Preparing data for swarm..."
-    Rscript "${SCRIPT_DIR}"/prepare_for_swarm.R "${OUTPUT_DIR}" 
+    Rscript "${SCRIPT_DIR}"/clustering/prepare_for_swarm.R "${OUTPUT_DIR}" 
    
     # Check if Rscript was successful
     if [[ $? -eq 0 ]]; then
         echo "Launching swarm..."
-        bash "${SCRIPT_DIR}"/swarm.sh "${OUTPUT_DIR}"/swarm_input 
+        bash "${SCRIPT_DIR}"/clustering/swarm.sh "${OUTPUT_DIR}"/swarm_input 
     else
         echo "Error: R script failed. Swarm will not be launched." >&2
         exit 1  # Exit with error status
@@ -447,7 +450,7 @@ if [[ "${SECONDARY_SWARM}" = "YES" ]]; then
 	# Check if swarm was successful
     if [[ $? -eq 0 ]]; then
         echo "Parsing swarm..."
-        Rscript "${SCRIPT_DIR}"/parsing_swarm.R "${OUTPUT_DIR}"
+        Rscript "${SCRIPT_DIR}"/clustering/parsing_swarm.R "${OUTPUT_DIR}"
     else
         echo "Error: swarm script failed. " >&2
         exit 1  # Exit with error status
