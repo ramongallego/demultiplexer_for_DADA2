@@ -57,7 +57,7 @@ files.noprimers |>
              select(fastq_header, Sample )) -> files.noprimers
 
 print("We should have reduced the dataset to those matching the sample map and added the real sample names")
-files.noprimers
+names(files.noprimers$Fwd.R1) <- names(files.noprimers$Fwd.R2) <- names(files.noprimers$Rev.R1) <- names(files.noprimers$Rev.R2) <- files.noprimers$Sample
 
 ## ----filter and trim----------------------------------------------------------
 filt_path <- file.path(params$folder, "/filtered") # Place filtered files in filtered/ subdirectory
@@ -65,12 +65,12 @@ filt_path <- file.path(params$folder, "/filtered") # Place filtered files in fil
 filt_function <- function(file1, file2){
   filt1s <- file.path(filt_path,basename(file1))
   filt2s <- file.path(filt_path,basename(file2))
-        filterAndTrim(file1, filt1s, file2, filt2s, 
+       filterAndTrim(file1, filt1s, file2, filt2s, 
                       truncLen = c(params$len1,params$len2), 
                       maxN=0, maxEE=c(2,2),
                       truncQ=2, rm.phix=TRUE,
                       compress=TRUE, multithread=TRUE)  |> 
-        as_tibble()
+        as_tibble(rownames = "Sample")
     }
 
 ## TODO implement futuremap for multicore usage - testing now
@@ -81,20 +81,23 @@ files.noprimers |>
   mutate(filtF1s = file.path(filt_path,basename(Fwd.R1)),
          filtF2s = file.path(filt_path,basename(Fwd.R2)),
          filtR1s = file.path(filt_path,basename(Rev.R1)),
-         filtR2s = file.path(filt_path,basename(Rev.R2)),
-         outFs = map2_dfr (Fwd.R1, Fwd.R2, filt_function ),
-         outRs = map2_dfr (Rev.R1, Rev.R2, filt_function)) -> files.noprimers
+         filtR2s = file.path(filt_path,basename(Rev.R2))) -> files.noprimers
+outFs <- filt_function(files.noprimers$Fwd.R1,
+                       files.noprimers$Fwd.R2 )
+outRs <- filt_function(files.noprimers$Rev.R1,
+                        files.noprimers$Rev.R2)
 
-# discard those with fewer than 100 seqs passing either filter
+
 toc()
 
-files.noprimers |>
- filter (outFs$reads.out >100 & outRs$reads.out > 100) -> goodqs
+# discard those with fewer than 100 seqs passing either filter
 
- files.noprimers |> 
-  anti_join(goodqs) -> discarded
-
-rm(files.noprimers)
+files.noprimers |> 
+  inner_join(outFs |> 
+             select(Sample, reads.outF = reads.out), by = "Sample") |>
+  inner_join(outRs |>
+             select(Sample, reads.outR = reads.out), by = "Sample") |>
+  filter (reads.outF >100 & reads.outR > 100) -> goodqs
 
 #### Learn 4 errors objects: these are a function of the NEXTSEQ run and not of 
 #### the sample, so it does not make sense to calculate them once per row.
@@ -117,63 +120,67 @@ saveRDS(tosave, file = file.path(params$folder,"all.errors.rds"))
 
 ## ----dereplication, echo=F,message=FALSE--------------------------------------
 tic("Dereplicating")
-goodqs |> 
-  mutate (across( 
-                  starts_with("filt"),
-                  ~  map(.x,derepFastq),                 # Transformation (identity in this example)
-                  .names = "{gsub('filt', 'derep', .col)}" # Rename by replacing "filt" with "derep"
-    )
-  ) -> goodqs
+
+names(goodqs$filtF1s) <- goodqs$Sample
+names(goodqs$filtF2s) <- goodqs$Sample
+names(goodqs$filtR1s) <- goodqs$Sample
+names(goodqs$filtR2s) <- goodqs$Sample
+
+derepF1s <- derepFastq(goodqs$filtF1s, verbose = 0, multithread = TRUE)
+derepF2s <- derepFastq(goodqs$filtF2s, verbose = 0, multithread = TRUE)
+derepR1s <- derepFastq(goodqs$filtR1s, verbose = 0, multithread = TRUE)
+derepR2s <- derepFastq(goodqs$filtR2s, verbose = 0, multithread = TRUE)
+
 toc()
 ## ----dadaing, message=FALSE---------------------------------------------------
 
 tic("dada")
-goodqs |> 
-  mutate (
-          dadaF1s = map(derepF1s, ~dada(.x, err = errF1, multithread = TRUE, verbose = F)),
-          dadaF2s = map(derepF2s, ~dada(.x, err = errF2, multithread = TRUE, verbose = F)),
-          dadaR1s = map(derepR1s, ~dada(.x, err = errR1, multithread = TRUE, verbose = F)),
-          dadaR2s = map(derepR2s, ~dada(.x, err = errR2, multithread = TRUE, verbose = F))) -> goodqs
+dadaF1s <- dada(derepF1s, err = errF1, multithread = TRUE)
+dadaF2s <- dada(derepF2s, err = errF2, multithread = TRUE)
+dadaR1s <- dada(derepR1s, err = errR1, multithread = TRUE)
+dadaR2s <- dada(derepR2s, err = errR2, multithread = TRUE)
+toc()
+
 
 ## TODO: do this only if you have a HOARD=yes From here onwards takes very little time
 saveRDS(goodqs, file = file.path(params$folder,"tosave.rds"))
 toc()
 
 ## ----merging pairs------------------------------------------------------------
-tic("merging")
-goodqs |>
-  mutate(mergersF = pmap(.l = list(dadaF1s,derepF1s, dadaF2s,derepF2s), 
-                         .f = mergePairs,
-                         minOverlap = 10),
-         mergersR = pmap(.l = list(dadaR1s,derepR1s, dadaR2s,derepR2s), 
-                         .f = mergePairs,
-                         minOverlap = 10)) -> goodqs
+tic("merging R1 and R2")
+mergersF <- mergePairs(dadaF1s,derepF1s, dadaF2s,derepF2s,
+                      minOverlap = 10)
+mergersR <- mergePairs(dadaR1s,derepR1s, dadaR2s,derepR2s,
+                      minOverlap = 10) 
 toc()
 
 ## merging F and R , and chimeras1
+tic("merging F and R")
+mergersR <- map (mergersR, ~ .x |> 
+                            mutate(sequence = insect::rc(sequence)))
 
-goodqs |>
-  mutate (mergersR = map (mergersR, ~ .x |> 
-                            mutate(sequence = insect::rc(sequence))),
-          joined   = map2(mergersF, mergersR, ~ bind_rows(.x, .y) |> 
+joined   <- map2(mergersF, mergersR, ~ bind_rows(.x, .y) |> 
                           filter (accept) |> 
                           group_by(sequence, accept) |> 
-                          summarise(across(everything(), sum),  .groups = "drop"))) -> goodqs
-goodqs |>
-  write_rds(file.path(params$folder, "goodqs.rds"))
+                          summarise(across(everything(), sum),  .groups = "drop"))
+joined |>
+  write_rds(file.path(params$folder, "joined.rds"))
+toc()
 
-goodqs |>
-  mutate(nochim = map(joined, removeBimeraDenovo, multithread= TRUE)) -> goodqs
-
+tic("removing chimeras")
+nochim <- removeBimeraDenovo(joined, multithread= TRUE) 
+toc()
 
 
 ## ----tidying and writing------------------------------------------------------
-goodqs|> 
-  select(Sample,locus,nochim) |>
-  unnest(nochim) |> 
-  select(Sample,locus, sequence, nReads = abundance ) -> Abundance_table
 
- Abundance_table |>
+nochim |> 
+  bind_rows(.id = "Sample") |>
+  inner_join(goodqs |> 
+             select(Sample, locus), by = "Sample") |>
+  select(Sample, locus, sequence, nReads = abundance) -> Abundance_table 
+
+Abundance_table |>
   write_rds(file.path(params$folder, "Abundance_table.rds"))
  
 
@@ -199,23 +206,36 @@ Abundance_table |>
 ### Summary stats 
 getN <- function(x) sum(getUniques(x))
 
-goodqs |> 
-  select(Sample, locus, outFs, outRs, starts_with("dada"), starts_with ("merg"),joined, nochim) |> 
-  unnest(outFs) |>
-  dplyr::rename(inputF= reads.in, filtered.F = reads.out) |>
-  unnest(outRs) |>
-  dplyr::rename(inputR= reads.in, filtered.R = reads.out) |> 
-  mutate (across(c(starts_with("dada"), starts_with ("merg"),joined, nochim),
-                  ~map_dbl(.x, getN))) -> summary.good
+files.noprimers |> 
+  select(Sample, locus) |>
+  inner_join(outFs |> 
+             select(Sample, reads.outF = reads.out), by = "Sample") |>
+  inner_join(outRs |>
+             select(Sample, reads.outR = reads.out), by = "Sample") -> summary_dada2
 
+# Example named lists
+derepF_counts   <- sapply(derepF1s, getN)
+derepR_counts   <- sapply(derepR1s, getN)
+dadaF_counts    <- sapply(dadaF1s, getN)
+dadaR_counts    <- sapply(dadaR1s, getN)
+mergedFs       <- sapply(mergersF, getN) 
+mergedRs       <- sapply(mergersR, getN)
+joined_counts <- sapply(joined, getN)
+nochim_counts <- sapply(nochim, getN)
 
-if(nrow(discarded)>=1){              
-bind_rows(summary.good, discarded|>
-                        unnest(outFs) |>
-                        dplyr::rename(inputF= reads.in, filtered.F = reads.out) |>
-                        unnest(outRs) |>
-                        dplyr::rename(inputR= reads.in, filtered.R = reads.out)) |>
-  write_csv(file.path(params$folder, "summary_dada2.csv"))
+# Build a tibble
+names_good <- summary_dada2$Sample
+tibble(
+  Sample = names_good,
+  derepF = derepF_counts[names_good],
+  derepR = derepR_counts[names_good],
+  dadaF = dadaF_counts[names_good],
+  dadaR = dadaR_counts[names_good], 
+  mergedF = mergedFs[names_good],
+  mergedR = mergedRs[names_good],
+  joined = joined_counts[names_good],
+  nochim = nochim_counts[names_good]
+) %>%
+ inner_join(summary_dada2,., by = "Sample") -> summary_dada2
 
-} else {write_csv(summary.good, file.path(params$folder, "summary_dada2.csv"))}
-
+write_csv(summary_dada2, file.path(params$folder, "summary_dada2.csv"))
