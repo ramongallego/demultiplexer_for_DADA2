@@ -84,9 +84,10 @@ files.noprimers |>
          filtR2s = file.path(filt_path,basename(Rev.R2))) -> files.noprimers
 outFs <- filt_function(files.noprimers$Fwd.R1,
                        files.noprimers$Fwd.R2 )
+outFs
 outRs <- filt_function(files.noprimers$Rev.R1,
                         files.noprimers$Rev.R2)
-
+outRs
 
 toc()
 
