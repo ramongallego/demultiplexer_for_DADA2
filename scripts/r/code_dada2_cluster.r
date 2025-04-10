@@ -132,10 +132,10 @@ names(goodqs$filtF2s) <- goodqs$Sample
 names(goodqs$filtR1s) <- goodqs$Sample
 names(goodqs$filtR2s) <- goodqs$Sample
 
-derepF1s <- derepFastq(goodqs$filtF1s, verbose = 0, multithread = TRUE)
-derepF2s <- derepFastq(goodqs$filtF2s, verbose = 0, multithread = TRUE)
-derepR1s <- derepFastq(goodqs$filtR1s, verbose = 0, multithread = TRUE)
-derepR2s <- derepFastq(goodqs$filtR2s, verbose = 0, multithread = TRUE)
+derepF1s <- derepFastq(goodqs$filtF1s, verbose = 0)
+derepF2s <- derepFastq(goodqs$filtF2s, verbose = 0)
+derepR1s <- derepFastq(goodqs$filtR1s, verbose = 0)
+derepR2s <- derepFastq(goodqs$filtR2s, verbose = 0)
 
 toc()
 ## ----dadaing, message=FALSE---------------------------------------------------
