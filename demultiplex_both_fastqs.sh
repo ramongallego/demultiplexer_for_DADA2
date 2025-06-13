@@ -286,7 +286,7 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	  	Barcodes_file="$OUTPUT_DIR"/barcodes_"${ID1S}".fasta
 	  
 	  	awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ADAP=$COLNUM_ID2 \
-	    '{if ($COLNUM == VALUE) { printf ">%s\n^%s\n", $ADAP, $ADAP } }' $SEQUENCING_METADATA > "${Barcodes_file}"
+	    '{if ($COLNUM == VALUE) { printf ">%s\n%s\n", $ADAP, $ADAP } }' $SEQUENCING_METADATA > "${Barcodes_file}"
 	  
 	  # Primers and loci
 	  	primers_file_R1="$OUTPUT_DIR"/primers_"${ID1S}"_R1.fasta
