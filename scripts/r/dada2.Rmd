@@ -31,51 +31,64 @@ First load the packages. And let's update the parameters we need
 ```{r loading packages, echo=FALSE ,message=FALSE}
 
 library (tidyverse)
-library (stringr)
 library (dada2)
 library (Biostrings)
 library (digest)
 
 #fastq.folder="/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180108_1539"
 sample.map <- read_delim(paste0(params$folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
-head (sample.map)
-
-path1 <- params$fastqs
-params$original[1]
-Sys.setenv(READ1=params$original[1])
-Sys.setenv(READ2=params$original[2])
+path1 <- params$folder
+dir.create(file.path(path1, "filtered"))
 ```
 Firstly, we'll find the patterns that separate our Fwd, Rev, .1 and .2 files. look at the quality of the .1 and .2 reads
 ```{r listing files}
+F1s <- tibble (F1s = sort(list.files(path1, pattern="_Fwd.1.fastq", full.names = TRUE))) |>
+  mutate (fastq_header = str_replace(basename(F1s), "_Fwd.1.fastq","") )
+               
+F2s <- tibble (F2s = sort(list.files(path1, pattern="_Fwd.2.fastq", full.names = TRUE))) |> 
+  mutate (fastq_header = str_replace(basename(F2s), "_Fwd.2.fastq","") )
 
-F1s <- sort(list.files(path1, pattern="_Fwd.1.fastq", full.names = TRUE))
-F2s <- sort(list.files(path1, pattern="_Fwd.2.fastq", full.names = TRUE))
-R1s <- sort(list.files(path1, pattern="_Rev.1.fastq", full.names = TRUE))
-R2s <- sort(list.files(path1, pattern="_Rev.2.fastq", full.names = TRUE))
+R1s <- tibble (R1s = sort(list.files(path1, pattern="_Rev.1.fastq", full.names = TRUE))) |> 
+  mutate (fastq_header = str_replace(basename(R1s), "_Rev.1.fastq","") )
 
+R2s <- tibble(R2s = sort(list.files(path1, pattern="_Rev.2.fastq", full.names = TRUE))) |> 
+  mutate (fastq_header = str_replace(basename(R2s), "_Rev.2.fastq","") )
+
+inner_join(F1s, F2s) |> 
+  inner_join(R1s) |> 
+  inner_join(R2s) |> 
+  inner_join(sample.map) -> files
+
+files |> 
+  mutate(across(.cols= c(F1s, F2s, R1s, R2s), 
+                .fns = ~ file.path(path1, "filtered", basename(.x)),))
+```
+
+
+```{r listing files}
 # Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
-sample.names <- str_replace(basename(F1s), "_Fwd.1.fastq","")
+# sample.names <- str_replace(basename(F1s), "_Fwd.1.fastq","")
 
 #Now use only those that reflect a real sample
 
-good.sample.names<-sample.names[sample.names %in% sample.map$fastq_header]
+# good.sample.names<-sample.names[sample.names %in% sample.map$fastq_header]
 # Introduce here the biological counterpart of the fastq file
 
-real.sample.name <- sample.map[,3][match(good.sample.names,sample.map$fastq_header),1]
+# real.sample.name <- sample.map[,3][match(good.sample.names,sample.map$fastq_header),1]
 
-# Now subset the number of files to be looked at
-
-F1sgood<-F1s[sample.names %in% sample.map$fastq_header]
-F2sgood<-F2s[sample.names %in% sample.map$fastq_header]
-R1sgood<-R1s[sample.names %in% sample.map$fastq_header]
-R2sgood<-R2s[sample.names %in% sample.map$fastq_header]
+# # Now subset the number of files to be looked at
+# 
+# F1sgood<-F1s[sample.names %in% sample.map$fastq_header]
+# F2sgood<-F2s[sample.names %in% sample.map$fastq_header]
+# R1sgood<-R1s[sample.names %in% sample.map$fastq_header]
+# R2sgood<-R2s[sample.names %in% sample.map$fastq_header]
 
 ```
 
 A nice idea is to plot the Quality of the F1 reads
 
 ```{r qplot1, echo=FALSE}
-plotQualityProfile(F1sgood[1:4])
+plotQualityProfile(files$F1s[1:4])
 ```
 
 The quality should be similar to that of the Reverse .1 reads
@@ -92,6 +105,8 @@ plotQualityProfile(F2sgood[1:4])
 ## Now start with the trimming of each read based on the quality we just plotted
 ```{r filter and trim}
 filt_path <- file.path(params$folder, "/filtered") # Place filtered files in filtered/ subdirectory
+dir.create(filt_path)
+
 filtF1s <- file.path(filt_path, paste0(good.sample.names, "_F1_filt.fastq.gz"))
 filtF2s <- file.path(filt_path, paste0(good.sample.names, "_F2_filt.fastq.gz"))
 out_Fs <- filterAndTrim(F1sgood, filtF1s, F2sgood, filtF2s, truncLen=c(200,200),
