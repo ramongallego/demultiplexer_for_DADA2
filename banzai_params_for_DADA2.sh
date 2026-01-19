@@ -35,7 +35,7 @@ COLNAME_SAMPLE_ID="sample_id"
 # Your metadata must have a column corresponding to the subfolders containing the raw reads.
 # In order to make this flexible across both multiple and single library preps, you must include this even if you only sequenced one library (sorry!).
 COLNAME_ID1_NAME="pri_index_name"
-COLNAME_ID1_SEQ="pri_index_seq"
+COLNAME_ID1_SEQ="pri_index_name"
 
 COLNAME_INSERT_SIZE="insert_size"
 
