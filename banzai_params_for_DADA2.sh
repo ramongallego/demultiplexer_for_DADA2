@@ -85,6 +85,7 @@ COLNAME_ID2_START="sec_index_start"
 # You must indicate the column names of the forward and reverse primers
 COLNAME_PRIMER1="primerF_seq"
 COLNAME_PRIMER2="primerR_seq"
+COLNAME_LOCUS="locus"
 
 ################################################################################
 # USE HASH
