@@ -7,3 +7,4 @@ scripts/r/*.html
 scripts/.DS_Store
 scripts/r/r.Rproj
 output_training/
+test_output/

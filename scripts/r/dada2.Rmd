@@ -35,7 +35,7 @@ library (dada2)
 library (Biostrings)
 library (digest)
 
-#fastq.folder="/Users/rgallego/fastqs_demultiplexed_for_DADA2/demultiplexed_20180108_1539"
+
 sample.map <- read_delim(paste0(params$folder,"/sample_trans.tmp"),col_names = c("Full_Id", "fastq_header","Sample"),delim = "\t")
 path1 <- params$folder
 dir.create(file.path(path1, "filtered"))
@@ -64,26 +64,6 @@ files |>
                 .fns = ~ file.path(path1, "filtered", basename(.x)),))
 ```
 
-
-```{r listing files}
-# Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
-# sample.names <- str_replace(basename(F1s), "_Fwd.1.fastq","")
-
-#Now use only those that reflect a real sample
-
-# good.sample.names<-sample.names[sample.names %in% sample.map$fastq_header]
-# Introduce here the biological counterpart of the fastq file
-
-# real.sample.name <- sample.map[,3][match(good.sample.names,sample.map$fastq_header),1]
-
-# # Now subset the number of files to be looked at
-# 
-# F1sgood<-F1s[sample.names %in% sample.map$fastq_header]
-# F2sgood<-F2s[sample.names %in% sample.map$fastq_header]
-# R1sgood<-R1s[sample.names %in% sample.map$fastq_header]
-# R2sgood<-R2s[sample.names %in% sample.map$fastq_header]
-
-```
 
 A nice idea is to plot the Quality of the F1 reads
 
@@ -124,8 +104,8 @@ out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(200,200),
 ```{r as tibble}
 out_Fs_tibble<-tibble(file=dimnames(out_Fs)[[1]], reads.out=out_Fs[,2])
 out_Rs_tibble<-tibble(file=dimnames(out_Rs)[[1]], reads.out=out_Rs[,2])
-out_Fs_tibble |> write_csv(file.path(params$folder,"outF.csv"))
-out_Rs_tibble |> write_csv(file.path(params$folder,"outR.csv"))
+out_Fs_tibble |> write_csv(file.path(params$folder, "outF.csv"))
+out_Rs_tibble |> write_csv(file.path(params$folder, "outR.csv"))
 
 
 ```
@@ -353,20 +333,6 @@ if (grepl ("yes", params$hash, ignore.case = TRUE)) {
                         Sequence = colnames(seqtab.nochim.df))
   
   colnames(seqtab.nochim.df) <- Hashes
-
-  # for (i in 1:ncol(seqtab.nochim.df)) {   #for each column of the dataframe
-  # 
-  #   current_seq <-colnames(seqtab.nochim.df)[i]
-  # 
-  #   current_hash <- digest(current_seq,algo = "sha1",serialize = F,skip = "auto")
-  # 
-  #   hashes[[i]] <-  current_hash
-  # 
-  #   conv_table [i,]<-c(current_hash, current_seq)
-  # 
-  #   colnames(seqtab.nochim.df)[i] <- current_hash
-  # 
-  # }
 
   write_csv(conv_table, conv_file)
 
