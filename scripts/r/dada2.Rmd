@@ -29,7 +29,7 @@ You have successfully split your libraries into a pair (or two) of fastq files p
 
 First load the packages. And let's update the parameters we need
 ```{r loading packages, echo=FALSE ,message=FALSE}
-library (devtools)
+
 library (tidyverse)
 library (stringr)
 library (dada2)
@@ -75,18 +75,18 @@ R2sgood<-R2s[sample.names %in% sample.map$fastq_header]
 A nice idea is to plot the Quality of the F1 reads
 
 ```{r qplot1, echo=FALSE}
-plotQualityProfile(F1sgood[1:4])
+#plotQualityProfile(F1sgood[1:4])
 ```
 
 The quality should be similar to that of the Reverse .1 reads
 
 ```{r plot2, echo=FALSE}
-plotQualityProfile(R1sgood[1:4])
+#plotQualityProfile(R1sgood[1:4])
 ```
 
 On the other hand, the quality of the .2 reads should decrease earlier
 ```{r qplot3, echo=FALSE}
-plotQualityProfile(F2sgood[1:4])
+#plotQualityProfile(F2sgood[1:4])
 ```
 
 ## Now start with the trimming of each read based on the quality we just plotted
@@ -109,7 +109,12 @@ out_Rs <- filterAndTrim(R1sgood, filtR1s, R2sgood, filtR2s, truncLen=c(200,200),
 ```{r as tibble}
 out_Fs_tibble<-tibble(file=dimnames(out_Fs)[[1]], reads.out=out_Fs[,2])
 out_Rs_tibble<-tibble(file=dimnames(out_Rs)[[1]], reads.out=out_Rs[,2])
-out_Fs_tibble
+out_Fs_tibble |> write_csv(file.path(params$folder, "outF.csv"))
+out_Rs_tibble |> write_csv(file.path(params$folder, "outR.csv"))
+
+out_Fs_tibble |> 
+  
+
 ```
 
 Now the first crucial step: learning the error rates that would be different for fwd and rev reads
