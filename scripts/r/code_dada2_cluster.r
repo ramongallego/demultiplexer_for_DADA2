@@ -42,7 +42,7 @@ files.noprimers
 files.noprimers |> 
   mutate(locus = str_extract(files, "(?<=_Locus_)[^_]+"),
          direction = str_extract(files, "(Fwd|Rev)\\.R[12]"),
-         fastq_header = str_extract(basename(files), "^[^_]+_[^_]+")) |>
+         fastq_header = str_extract(basename(files), "^.+(?=_Locus_)")) |>
   pivot_wider (names_from = "direction",
                values_from = "files") -> files.noprimers
 

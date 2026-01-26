@@ -433,7 +433,6 @@ if [[ "${SEARCH_Unoise}" = "YES" ]]; then
 	echo "Entering SEARCH_Uniose block"
 	bash "${SCRIPT_DIR}"/clustering/vsearch_clustering.sh "${OUTPUT_DIR}" "${NOPRIMERS_DIR}" "${USE_HASH}"  "${LENR1}" "${LENR2}"
 	fi
-	echo "Exiting SEARCH_Uniose block"
 
 if [[ "${SECONDARY_SWARM}" = "YES" ]]; then
     echo "Preparing data for swarm..."

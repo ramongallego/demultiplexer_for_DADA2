@@ -101,7 +101,8 @@ USE_HASH="YES"
 SEARCH_ASVs="YES"
 
 ## TODO: Add variables to control the behaviour of dada2
-
+LENR1=220
+LENR2=150
 
 
 ################################################################################
@@ -123,8 +124,8 @@ FILTERED_OUTPUT='/Users/threeprime/Documents/Data/IlluminaData/12S/20140930/Anal
 # barcodes.fasta, summary.csv and pcr_primers.fasta; and the folder /demultiplexed
 # so the pipeline can cp all necessary files
 
-ALREADY_DEMULTIPLEXED="NO"
-DEMULT_OUTPUT=""
+ALREADY_DEMULTIPLEXED="YES"
+DEMULT_OUTPUT="${HOME}/fastqs_demultiplexed_for_DADA2/demultiplexed_20260126_1416"
 
 
 ################################################################################
