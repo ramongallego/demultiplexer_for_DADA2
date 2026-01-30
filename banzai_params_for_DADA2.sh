@@ -95,28 +95,23 @@ COLNAME_LOCUS="locus"
 USE_HASH="YES"
 
 ################################################################################
-# CLUSTER OTUs: USING DADA2
+# CLUSTER OTUs: USING DADA2, Unoise and secondary swarm
 ################################################################################
 
-SEARCH_ASVs="YES"
+SEARCH_ASVs="NO"
+
+SEARCH_Unoise="YES"
+
+SECONDARY_SWARM="YES"
 
 ## TODO: Add variables to control the behaviour of dada2
-LENR1=220
-LENR2=150
+LENR1=240
+
+LENR2=140
 
 
 ################################################################################
 # REANALYSIS
-################################################################################
-# Would you like to pick up where a previous analysis left off?
-
-# Have the reads already been paired?
-ALREADY_PEARED="NO" # YES/NO
-PEAR_OUTPUT='/Users/threeprime/Documents/Data/IlluminaData/12S/20140930/Analysis_20141030_2020/1_merged.assembled.fastq.gz'
-
-# Have the merged reads been quality filtered?
-ALREADY_FILTERED="NO" # [YES|NO]
-FILTERED_OUTPUT='/Users/threeprime/Documents/Data/IlluminaData/12S/20140930/Analysis_20141030_2020/2_filtered_renamed.fasta'
 
 
 # If using ASVs, have you already demultiplexed your reads into .1 and .2 pairs per sample.
