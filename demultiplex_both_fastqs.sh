@@ -107,7 +107,7 @@ source "${param_file}"
 
 	# Secondary indices
 	COLNUM_ID2=$( get_colnum "${COLNAME_ID2_SEQ}" "${SEQUENCING_METADATA}")
-
+  COLNUM_ID2_REV=$( get_colnum "${COLNAME_ID2_SEQ_REV}" "${SEQUENCING_METADATA}")
 	# Sample names
 	COLNUM_SAMPLE=$( get_colnum "${COLNAME_SAMPLE_ID}" "${SEQUENCING_METADATA}")
 
@@ -287,6 +287,11 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 	  
 	  	awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ADAP=$COLNUM_ID2 \
 	    '{if ($COLNUM == VALUE) { printf ">%s\n%s\n", $ADAP, $ADAP } }' $SEQUENCING_METADATA > "${Barcodes_file}"
+	    
+	    Barcodes_file_rev="$OUTPUT_DIR"/barcodes_"${ID1S}"_rev.fasta
+	  
+	  	awk -F',' -v COLNUM=$COLNUM_FILE1 -v VALUE=${FILE1[i]} -v ADAP=$COLNUM_ID2_REV \
+	    '{if ($COLNUM == VALUE) { printf ">%s\n%s\n", $ADAP, $ADAP } }' $SEQUENCING_METADATA > "${Barcodes_file_rev}"
 	  
 	  # Primers and loci
 	  	primers_file_R1="$OUTPUT_DIR"/primers_"${ID1S}"_R1.fasta
@@ -330,7 +335,7 @@ if [[ "${ALREADY_DEMULTIPLEXED}" != "YES" ]]; then
 		# Only one round of cutadapt is needed for demultiplexing, use all cores available
 	
 		cutadapt -g "file:"${Barcodes_file}";min_overlap=8" \
-			-G "file:"${Barcodes_file}";min_overlap=8" \
+			-G "file:"${Barcodes_file_rev}";min_overlap=8" \
 			-o "${OUTPUT_DIR}"/"${ID1S}"/"${ID1S}"_{name}.R1.fastq \
 			-p "${OUTPUT_DIR}"/"${ID1S}"/"${ID1S}"_{name}.R2.fastq \
 			"${READ1}" "${READ2}" --discard-untrimmed -j 0 -e 1 --pair-adapters > "${OUTPUT_DIR}"/cutadapt_logfiledemult.txt

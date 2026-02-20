@@ -70,7 +70,7 @@ SECONDARY_INDEX="YES"
 # these are the secondary index -- the primary index added with the sequencing adapters should not be in the sequence data
 # You can grab these from the file specified above (SEQUENCING_METADATA) by specifying the column name of index sequences.
 COLNAME_ID2_SEQ="sec_index_seq"
-
+COLNAME_ID2_SEQ_REV="sec_index_seq"
 # How many nucleotides pad the 5' end of the tag sequence?
 # TODO build in flexibility (this number is unused right now)
 TAG_Ns="3"
